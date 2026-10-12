@@ -14,13 +14,7 @@ area), with strict input validation, colored boxed UI, and computed Braille sket
 
 ## Demo
 
-
-
 https://github.com/user-attachments/assets/cb81f1b3-6605-4465-a380-b10b1024aa75
-
-
-
-
 
 ```text
 ┌─ Menu Program ───────────────────────────────────────────────────────────────────────────────┐
@@ -92,7 +86,7 @@ Syarat: compiler C++17 (`g++` atau `clang++`).
   `C:\msys64\ucrt64\bin` ke PATH.
 
 ```bash
-git clone https://github.com/<nama-pengguna>/alpro-console-tools.git
+git clone https://github.com/fadhlillah-dli/alpro-console-tools.git
 cd alpro-console-tools
 g++ -std=c++17 -Wall -Wextra -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp && ./tugas_alpro
 ```
@@ -139,6 +133,7 @@ alpro-console-tools/
 │   ├── tugas2_volume_tabung.cpp     Program 2 — lengkap, bisa dikompilasi sendiri
 │   └── tugas3_luas_arsir.cpp        Program 3 — lengkap, bisa dikompilasi sendiri
 ├── .github/workflows/               CI (build 3 OS, uji asap, uji coba.sh/coba.ps1) dan Release (paket biner saat tag v*)
+├── .github/dependabot.yml           pembaruan mingguan pin commit SHA action di workflow
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
 ├── coba.sh · coba.ps1               jalankan sekali tanpa memasang: unduh ke folder sementara, jalankan, hapus
