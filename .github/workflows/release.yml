@@ -95,6 +95,9 @@ jobs:
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         if: env.TAP_TOKEN != ''
+        # Menggunakan shell: bash berfungsi untuk mengaktifkan pipefail (bash -eo pipefail), dikarenakan tanpa itu unduhan
+        # tarball yang gagal tidak menghentikan langkah: sha256 dihitung dari input kosong dan formula yang salah ikut di-push.
+        shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
           tarball="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
@@ -104,7 +107,7 @@ jobs:
           mkdir -p tap/Formula
           cat > tap/Formula/alpro-console-tools.rb <<EOF
           class AlproConsoleTools < Formula
-            desc "Program konsol C++17 untuk praktikum Algoritma & Pemrograman: rekap nilai, volume tabung, luas arsir"
+            desc "Program konsol C++17 praktikum Alpro: rekap nilai, volume tabung, luas arsir"
             homepage "https://github.com/${GITHUB_REPOSITORY}"
             url "${tarball}"
             sha256 "${sha}"
@@ -116,7 +119,7 @@ jobs:
             end
 
             test do
-              output = pipe_output("#{bin}/tugas_alpro", "3\n\n2\n14\n\n0\n")
+              output = pipe_output("#{bin}/tugas_alpro", "3\n\n2\n14\n\n0\n", 0)
               assert_match "42.00", output
             end
           end
