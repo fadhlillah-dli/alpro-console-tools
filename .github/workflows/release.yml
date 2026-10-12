@@ -28,7 +28,7 @@ jobs:
           - os: windows-latest
             label: windows-x86_64
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false  # tidak ada perintah git setelah checkout, jadi token tidak perlu tersimpan di .git/config
 
@@ -76,7 +76,7 @@ jobs:
           cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
 
       - name: Simpan paket sebagai artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: paket-${{ matrix.label }}
           path: |
@@ -93,7 +93,7 @@ jobs:
       contents: write  # satu-satunya job yang menulis: membuat rilis dan mengunggah aset
     steps:
       - name: Ambil semua paket
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: paket
           merge-multiple: true
