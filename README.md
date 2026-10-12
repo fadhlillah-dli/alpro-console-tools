@@ -2,7 +2,7 @@
 
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#unduh-siap-pakai-tanpa-kompilasi)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#menjalankan)
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
 Program konsol C++ untuk praktikum **Algoritma & Pemrograman (Modul 1: Input dan Output)**: rekap nilai
@@ -54,85 +54,26 @@ Pilihan Anda [0-3] : 2
   mengecil, keterangan pindah ke bawah gambar bila jendela sempit.
 - **Setiap baris berkomentar** (bahasa Indonesia) menjelaskan apa yang dipakai dan mengapa, cocok untuk belajar.
 
-## Pemasangan
+## Menjalankan
 
-### macOS dan Linux: satu perintah (disarankan)
+Satu perintah, tanpa memasang apa pun: paket rilis terbaru diunduh ke folder sementara, diverifikasi SHA-256, dijalankan,
+lalu foldernya dihapus begitu program ditutup (juga bila dihentikan dengan Ctrl+C). Tidak perlu hak Administrator, tidak
+ada dialog Gatekeeper atau SmartScreen, dan PATH tidak disentuh.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.sh | sh
-```
-
-Skrip ini mengunduh paket rilis terbaru lewat `curl`, memverifikasi SHA-256, dan memasang `tugas_alpro` ke
-`~/.local/bin`. Karena tidak lewat browser, berkasnya tidak diberi tanda karantina, sehingga **tidak ada dialog
-Gatekeeper** di macOS. Lalu jalankan dengan `tugas_alpro`.
-
-### Windows: satu perintah di PowerShell (disarankan)
-
-Gunakan **PowerShell**, bukan Command Prompt: tekan tombol Windows, ketik `PowerShell`, Enter (atau buka tab PowerShell di
-Windows Terminal). Windows PowerShell 5.1 bawaan maupun PowerShell 7 sama-sama bisa. Lalu jalankan:
-
-```powershell
-irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.ps1 | iex
-```
-
-Skrip ini mengunduh paket rilis terbaru, memverifikasi SHA-256, memasang `tugas_alpro.exe` ke
-`%LOCALAPPDATA%\Programs\alpro-console-tools`, melepas tanda unduhan sehingga **tidak ada layar SmartScreen**, dan
-menambahkan folder itu ke PATH pengguna. Tidak perlu hak Administrator. Setelah itu jalankan `tugas_alpro` (di jendela
-terminal baru bila perintah belum dikenal); perintah ini berjalan di PowerShell maupun Command Prompt.
-
-### macOS dan Linux: Homebrew
+macOS dan Linux (x86_64), di Terminal:
 
 ```bash
-brew install fadhlillah-dli/tap/alpro-console-tools
-```
-
-Homebrew mengambil source code rilis dan mengompilasinya di mesin Anda (beberapa detik); program yang dikompilasi
-lokal juga tidak terkena Gatekeeper. Perbarui dengan `brew upgrade alpro-console-tools`.
-
-### Paket siap pakai (zip) untuk yang memilih cara klik
-
-Halaman [**Releases**](../../releases/latest) menyertakan `…-macos-universal.zip` (Apple Silicon dan Intel),
-`…-windows-x86_64.zip`, dan `…-linux-x86_64.tar.gz`, masing-masing dengan peluncur klik-dua-kali dan berkas
-`SHA256SUMS` untuk verifikasi. Program tidak ditandatangani Apple/Microsoft (keduanya berbayar), jadi berkas yang
-diunduh **lewat browser** diperiksa pada pemakaian pertama:
-
-- macOS: klik kanan `Jalankan.command` → Open → Open; bila macOS tetap menolak ("Not Opened"), buka System Settings →
-  Privacy & Security → **Open Anyway** sekali. Peluncur melepas tanda karantina dari `tugas_alpro` setelah itu.
-- Windows: klik dua kali `Jalankan.bat`; pada layar "Windows protected your PC" klik **More info** → **Run anyway**
-  (sekali). Peluncur melepas tanda unduhan dari `tugas_alpro.exe` sehingga tidak ditanya lagi.
-- Linux: `sh jalankan.sh`.
-
-### Coba dulu tanpa memasang
-
-Ingin mencoba sekali tanpa meninggalkan apa pun? Perintah berikut mengunduh paket ke folder sementara, memverifikasi
-SHA-256, menjalankan program, lalu menghapus foldernya begitu program ditutup (juga bila dihentikan dengan Ctrl+C).
-Tidak ada yang dipasang, PATH tidak disentuh.
-
-```bash
-# macOS dan Linux
 curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
 ```
 
+Windows 10/11 (x64), di **PowerShell** (tekan tombol Windows, ketik `PowerShell`, Enter; bukan Command Prompt):
+
 ```powershell
-# Windows (PowerShell)
 irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.ps1 | iex
 ```
 
-### Menghapus pemasangan
-
-Pemasang satu perintah hanya meninggalkan satu berkas program (dan di Windows satu entri PATH pengguna):
-
-- macOS dan Linux: `rm ~/.local/bin/tugas_alpro`
-- Homebrew: `brew uninstall alpro-console-tools`
-- Windows (PowerShell): hapus foldernya, lalu entri PATH dilepas tanpa mengubah entri lain:
-
-  ```powershell
-  Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Programs\alpro-console-tools"
-  $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
-  $p = [string]$k.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
-  $k.SetValue('Path', (($p -split ';' | Where-Object { $_ -and $_ -notlike '*\Programs\alpro-console-tools' }) -join ';'), $k.GetValueKind('Path'))
-  $k.Close(); [Environment]::SetEnvironmentVariable('ALPRO_PATH_REFRESH', [System.Management.Automation.Language.NullString]::Value, 'User')
-  ```
+Setiap kali dijalankan paket diunduh ulang (kurang dari 1 MB), jadi perlu koneksi internet. Di Windows, Command Prompt
+klasik dengan font Consolas menampilkan sketsa Braille sebagai kotak kecil; Windows Terminal menampilkannya dengan benar.
 
 ## Kompilasi sendiri
 
