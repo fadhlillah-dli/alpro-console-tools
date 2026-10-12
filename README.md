@@ -155,8 +155,9 @@ dibungkus `#ifndef BUILD_WITH_MENU`: dikompilasi sendiri ia menjadi program utuh
 | Konstanta | UPPER_SNAKE_CASE | `SCORE_MAX`, `PI_MODULE`, `ANSI_ERROR` |
 | Namespace | huruf kecil | `task1`, `task2`, `task3` |
 
-Identifier berbahasa Inggris; komentar dan teks tampilan berbahasa Indonesia. Kompilasi dijaga bersih dengan
-`-Wall -Wextra -pedantic -Werror` (GCC 13 dan Clang).
+Identifier berbahasa Inggris; komentar dan teks tampilan berbahasa Indonesia. Komentar ditulis untuk mahasiswa semester
+awal: tiap baris menyebut apa konstruksinya, apa yang dilakukannya di situ, dan mengapa (pola "menggunakan X berfungsi
+untuk Y, dikarenakan Z"). Kompilasi dijaga bersih dengan `-Wall -Wextra -pedantic -Werror` (GCC 13 dan Clang).
 
 ## Catatan tampilan
 

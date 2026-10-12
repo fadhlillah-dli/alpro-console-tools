@@ -4,7 +4,9 @@ Terima kasih sudah tertarik ikut mengembangkan proyek ini. Alurnya singkat:
 
 1. Fork repositori ini, lalu buat branch dari `main`, misalnya `fitur/validasi-nama` atau `perbaikan/lebar-kotak`.
 2. Ikuti konvensi kode di README (identifier bahasa Inggris, komentar bahasa Indonesia dengan pola
-   "menggunakan X berfungsi untuk Y / dikarenakan Z").
+   "menggunakan X berfungsi untuk Y / dikarenakan Z"). Komentar ditulis untuk mahasiswa semester awal: sebutkan dulu
+   apa konstruksinya dengan kata sederhana, lalu apa yang dilakukannya di baris itu dan mengapa; jangan menyebut fungsi
+   atau variabel yang tidak ada di baris itu tanpa penunjuk lokasinya.
 3. Pastikan kompilasi bersih tanpa peringatan:
    `g++ -std=c++17 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp`
    dan tiap berkas tugas juga bisa dikompilasi sendiri (tanpa `-DBUILD_WITH_MENU`).
