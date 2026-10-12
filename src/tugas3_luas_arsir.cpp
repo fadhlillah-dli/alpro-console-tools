@@ -15,11 +15,11 @@
  */
 
 // ===== BAGIAN 1: PUSTAKA (LIBRARY) YANG DIPAKAI =====
-#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max saat menghitung lebar kotak
+#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max dan std::min saat menghitung lebar kotak dan ukuran sketsa
 #include <cctype>       // menggunakan <cctype> berfungsi untuk std::isdigit, memeriksa apakah karakter adalah angka
 #include <cmath>        // menggunakan <cmath> berfungsi untuk std::hypot dan std::fabs saat menghitung lingkaran sketsa
 #include <cstddef>      // menggunakan <cstddef> berfungsi untuk std::size_t (tipe ukuran/lebar teks)
-#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, dan std::getenv
+#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, std::getenv, dan std::atoi
 #include <iomanip>      // menggunakan <iomanip> berfungsi untuk setw, left, fixed, setprecision
 #include <initializer_list>  // menggunakan <initializer_list> berfungsi untuk menerima daftar baris opsi { ... } pada printOptions
 #include <iostream>     // menggunakan <iostream> berfungsi untuk std::cin, std::cout, std::cerr
@@ -27,13 +27,13 @@
 #include <string>       // menggunakan <string> berfungsi untuk std::string (baris ketikan dan baris tampilan)
 #include <string_view>  // menggunakan <string_view> berfungsi untuk teks prompt yang hanya dibaca, tanpa disalin
 #include <vector>       // menggunakan <vector> berfungsi untuk daftar baris yang digambar di dalam kotak
-// Pustaka khusus sistem operasi untuk mendeteksi terminal dan mengaktifkan warna. Menggunakan #ifdef _WIN32
+// Pustaka khusus sistem operasi untuk mendeteksi terminal, membaca lebar jendela, mengaktifkan warna, dan UTF-8. Menggunakan #ifdef _WIN32
 // dikarenakan Windows dan macOS/Linux menyediakan fungsi yang berbeda untuk keperluan yang sama.
 #ifdef _WIN32
-    #ifndef NOMINMAX    // MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
+    #ifndef NOMINMAX    // menggunakan #ifndef dikarenakan MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
     #define NOMINMAX 1  // berfungsi mencegah windows.h mendefinisikan makro min/max yang merusak std::max
     #endif
-    #include <windows.h>    // GetStdHandle, GetConsoleMode, SetConsoleMode: mengaktifkan kode warna di Command Prompt
+    #include <windows.h>    // GetStdHandle, Get/SetConsoleMode (warna), SetConsoleOutputCP/SetConsoleCP (UTF-8), GetConsoleScreenBufferInfo (lebar jendela)
 #else
     #include <cstdio>       // fileno, stdout: dipakai bersama isatty
     #include <sys/ioctl.h>  // ioctl, TIOCGWINSZ, struct winsize: membaca lebar jendela terminal
@@ -49,7 +49,7 @@ namespace {
     // menulis "phi"; yang dimaksud adalah π / pi, bukan φ / phi rasio emas 1,618). Menggunakan tipe double
     // dikarenakan π bilangan desimal; constexpr berfungsi untuk menjadikannya konstanta yang pasti sejak kompilasi.
     constexpr double PI_MODULE   = 3.14;        // nilai bawaan, sesuai modul
-    constexpr double PI_FRACTION = 22.0 / 7.0;  // nilai yang dipakai soal sekolah bila sisi/jari-jari kelipatan 7
+    constexpr double PI_FRACTION = 22.0 / 7.0;  // nilai yang dipakai soal sekolah bila jari-jari kelipatan 7 (sisi persegi kelipatan 14)
     constexpr int    TITLE_WIDTH = 60;         // lebar garis judul, dalam karakter
     constexpr int    LABEL_WIDTH = 24;         // lebar kolom label pertanyaan pilihan, agar semua opsi sejajar
     constexpr double DIMENSION_MAX = 1000000.0;  // batas atas ukuran berfungsi untuk menolak salah ketik yang tidak masuk akal
@@ -69,18 +69,18 @@ namespace {
     constexpr const char* ANSI_TITLE  = "\033[1;36m";  // cyan tebal: judul program dan judul kotak
     constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // hijau tebal: pilihan yang ditegaskan dan hasil akhir
     constexpr const char* ANSI_ERROR  = "\033[1;31m";  // merah tebal: pesan kesalahan
-    constexpr const char* ANSI_HINT = "\033[33m";    // kuning: keterangan nilai bawaan [Enter = ...]
+    constexpr const char* ANSI_HINT = "\033[33m";    // kuning: keterangan nilai bawaan [Enter = ...] serta garis jari-jari R pada sketsa
     constexpr const char* ANSI_DIM    = "\033[90m";    // abu-abu: garis kotak dan garis pembatas
 
     // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
-    // π, ², ³, garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
+    // π, ², garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
     // masih memakai code page lama (mis. 437) yang menampilkannya sebagai huruf acak. Pengaturan ini berlaku untuk
     // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur jalankan.bat. Di macOS/Linux
     // terminal sudah UTF-8, sehingga fungsi ini tidak melakukan apa-apa.
     void enableUtf8Console() {
     #ifdef _WIN32
         SetConsoleOutputCP(CP_UTF8);  // keluaran: byte UTF-8 ditampilkan sebagai karakter yang benar
-        SetConsoleCP(CP_UTF8);        // masukan: ketikan nama dengan huruf non-ASCII dibaca sebagai UTF-8
+        SetConsoleCP(CP_UTF8);        // masukan: ketikan dengan huruf non-ASCII dibaca sebagai UTF-8, sama dengan keluarannya
     #endif
     }
 
@@ -111,7 +111,7 @@ namespace {
     }
 
     // Berfungsi untuk menentukan apakah sebuah code point Unicode memakai dua kolom di terminal (aksara CJK, Hangul,
-    // emoji), dikarenakan tanpa ini kolom tabel bergeser untuk nama berhuruf Jepang/Tionghoa/Korea atau beremoji.
+    // emoji), dikarenakan tanpa ini lebar kotak dan pembungkusan baris salah bila teks memuat aksara lebar atau emoji.
     bool isWideCodePoint(unsigned codePoint) {
         return (codePoint >= 0x1100 && codePoint <= 0x115F) || (codePoint >= 0x2E80 && codePoint <= 0xA4CF)
             || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF)
@@ -120,7 +120,7 @@ namespace {
             || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF);
     }
 
-    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (π, ², ³, garis kotak) dihitung
+    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (π, ², garis kotak, Braille) dihitung
     // satu kolom, aksara lebar (CJK, emoji) dua kolom, dan kode warna ANSI nol kolom, dikarenakan ketiganya
     // tidak memakai ruang sebanyak byte-nya. Byte awal UTF-8 menentukan jumlah byte lanjutan yang dirangkai.
     std::size_t displayWidth(std::string_view text) {
@@ -145,8 +145,8 @@ namespace {
     }
 
     // Berfungsi membaca lebar terminal saat ini (jumlah kolom) setiap kali dipanggil, sehingga tampilan ikut
-    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai 80 kolom,
-    // ukuran bawaan terminal pada umumnya. Menggunakan batas bawah 50 dikarenakan di bawah itu tabel tidak bisa rapi.
+    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai variabel COLUMNS, lalu 80 kolom,
+    // ukuran bawaan terminal pada umumnya. Menggunakan batas bawah 50 dikarenakan di bawah itu kotak dan sketsa tidak bisa rapi.
     int terminalWidth() {
         int cols = 0;
     #ifdef _WIN32
@@ -163,7 +163,7 @@ namespace {
 
     // Berfungsi memotong satu baris teks yang lebih panjang dari 'maxWidth' kolom menjadi beberapa baris, memotong
     // pada spasi, dan memberi baris lanjutan indentasi 'gantung' agar tetap sejajar dengan isi setelah label.
-    // Dipakai drawBox() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
+    // Dipakai drawBox(), printError(), dan printOptions() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) {
         std::vector<std::string> result;
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2;  // indentasi terlalu besar untuk jendela sempit: pakai 2 spasi saja
@@ -189,7 +189,7 @@ namespace {
     }
 
     // Berfungsi untuk menggambar kotak berjudul berisi baris-baris teks. Lebar kotak mengikuti baris terpanjang,
-    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (bungkus), dengan
+    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (wrapText), dengan
     // indentasi gantung sejajar label bila baris berpola "Label : isi". Menggunakan kotak dikarenakan informasi
     // (petunjuk, menu, hasil) jadi terpisah jelas dari pertanyaan.
     void drawBox(std::string_view title, const std::vector<std::string>& lines) {
@@ -295,7 +295,7 @@ namespace {
         return (parser >> result) && (parser >> std::ws).eof();  // sah bila terbaca sebagai angka tanpa sisa karakter
     }
 
-    // Berfungsi untuk meminta bilangan desimal yang harus lebih besar dari 0; diulang sampai sah.
+    // Berfungsi untuk meminta bilangan desimal yang harus lebih besar dari 0 dan paling besar DIMENSION_MAX; diulang sampai sah.
     double readPositiveDecimal(std::string_view prompt) {
         while (true) {  // menggunakan while (true) berfungsi untuk mengulang permintaan sampai input sah; keluar lewat return
             double value = 0.0;  // menggunakan double dikarenakan ukuran boleh desimal; 0.0 sebagai nilai awal yang jelas
@@ -309,7 +309,7 @@ namespace {
         }
     }
 
-    // Berfungsi untuk meminta pilihan berupa satu digit 1..maksimal; Enter tanpa isi berarti pilihan bawaan.
+    // Berfungsi untuk meminta pilihan berupa satu digit 1..maxValue; Enter tanpa isi berarti pilihan bawaan (defaultValue).
     // Menggunakan nilai bawaan dikarenakan pilihan paling umum (cm, π = 3.14) cukup ditekan Enter.
     int readChoice(std::string_view prompt, int maxValue, int defaultValue) {
         while (true) {  // diulang dikarenakan pilihan salah harus diminta lagi
@@ -338,7 +338,7 @@ namespace {
             const bool isDefaultLine = (b.substr(0, 6) == "[Enter");  // baris "[Enter = ...]" diberi warna kuning
             const std::string content = isDefaultLine ? colorize(ANSI_HINT, b) : std::string(b);
             // Baris pertama memuat label (tebal) lalu ": "; baris berikutnya diberi spasi selebar label + ": " agar
-            // sejajar. Keduanya dibungkus (bungkus) agar opsi yang panjang tidak terpotong di jendela sempit.
+            // sejajar. Keduanya dibungkus (wrapText) agar opsi yang panjang tidak terpotong di jendela sempit.
             const std::string start = isFirst
                 ? colorize(ANSI_BOLD, std::string(label) + std::string(label.size() < LABEL_WIDTH ? LABEL_WIDTH - label.size() : 0, ' ')) + ": "
                 : std::string(LABEL_WIDTH + 2, ' ');
@@ -383,7 +383,7 @@ namespace {
         return result;
     }
 
-    // ===== KANVAS BRAILLE: GAMBAR BERESOLUSI TINGGI DI TERMINAL =====
+    // ===== BAGIAN 5 (LANJUTAN): KANVAS BRAILLE, SKETSA, DAN BARIS HASIL =====
     // Menggunakan karakter Braille Unicode (U+2800 s.d. U+28FF) berfungsi untuk menggambar dengan resolusi 2 x 4 titik
     // per sel terminal, delapan kali lebih halus daripada satu karakter blok, dikarenakan setiap karakter Braille
     // mewakili kombinasi 8 titik yang dapat dinyalakan satu per satu (teknik yang dipakai pustaka seperti drawille).
@@ -526,7 +526,7 @@ namespace {
 
 // ===== BAGIAN 6: PROGRAM UTAMA TUGAS 3 =====
 // Menggunakan namespace task3 berfungsi untuk memberi nama khas pada run(), dikarenakan program bermenu
-// memanggilnya sebagai tugas3::run().
+// memanggilnya sebagai task3::run().
 namespace task3 {
 
     void run() {
@@ -534,7 +534,7 @@ namespace task3 {
         printTitle("PROGRAM 3 : LUAS BANGUN YANG DIARSIR (PERSEGI - LINGKARAN)");
         std::cout << "Rumus : Luas Arsir = (S x S) - (Pi x (S/2) x (S/2))\n"
                   << "        Pi = \u03c0 (modul menulisnya phi)\n\n";
-        printSketch();    // berfungsi menampilkan sketsa bangun agar pengguna tahu bagian mana yang dimaksud R, D, T
+        printSketch();    // berfungsi menampilkan sketsa bangun agar pengguna tahu bagian mana yang dimaksud S dan R
         printInstructions();
 
         // --- Tahap pengaturan: satuan dan nilai π ---

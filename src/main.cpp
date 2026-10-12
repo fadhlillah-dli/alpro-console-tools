@@ -10,22 +10,22 @@
 //   g++ -std=c++17 -Wall -Wextra -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp && ./tugas_alpro
 //   (Windows PowerShell: .\tugas_alpro.exe) — atau tekan Cmd/Ctrl+Shift+B, lalu Run Task "Build & Run".
 
-#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max saat menghitung lebar kotak
+#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max dan std::min saat menghitung lebar terminal dan kotak
 #include <cctype>       // menggunakan <cctype> berfungsi untuk std::isdigit, memastikan ketikan menu hanya angka
 #include <cstddef>      // menggunakan <cstddef> berfungsi untuk std::size_t (tipe ukuran/lebar teks)
-#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, dan std::getenv
+#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, std::getenv, dan std::atoi
 #include <iostream>     // menggunakan <iostream> berfungsi untuk std::cin, std::cout, std::cerr
 #include <string>       // menggunakan <string> berfungsi untuk teks ketikan dan baris tampilan
 #include <string_view>  // menggunakan <string_view> berfungsi untuk teks yang hanya dibaca, tanpa disalin
 #include <utility>      // menggunakan <utility> berfungsi untuk std::pair (pasangan nama menu dan keterangannya)
 #include <vector>       // menggunakan <vector> berfungsi untuk daftar baris yang digambar di dalam kotak
-// Pustaka khusus sistem operasi untuk mendeteksi terminal dan mengaktifkan warna. Menggunakan #ifdef _WIN32
+// Pustaka khusus sistem operasi untuk mendeteksi terminal, membaca lebar jendela, mengaktifkan warna, dan UTF-8. Menggunakan #ifdef _WIN32
 // dikarenakan Windows dan macOS/Linux menyediakan fungsi yang berbeda untuk keperluan yang sama.
 #ifdef _WIN32
-    #ifndef NOMINMAX    // MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
+    #ifndef NOMINMAX    // menggunakan #ifndef dikarenakan MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
     #define NOMINMAX 1  // berfungsi mencegah windows.h mendefinisikan makro min/max yang merusak std::max
     #endif
-    #include <windows.h>    // GetStdHandle, GetConsoleMode, SetConsoleMode: mengaktifkan kode warna di Command Prompt
+    #include <windows.h>    // GetStdHandle, Get/SetConsoleMode (warna), SetConsoleOutputCP/SetConsoleCP (UTF-8), GetConsoleScreenBufferInfo (lebar jendela)
 #else
     #include <cstdio>       // fileno, stdout: dipakai bersama isatty
     #include <sys/ioctl.h>  // ioctl, TIOCGWINSZ, struct winsize: membaca lebar jendela terminal
@@ -34,7 +34,7 @@
 
 // Menggunakan deklarasi berfungsi untuk memberi tahu compiler bahwa fungsi-fungsi ini ada di berkas lain,
 // dikarenakan C++ mewajibkan fungsi dideklarasikan sebelum dipanggil. Definisinya ada di tiap berkas tugas.
-namespace task1 { void run(); }  // Program 1 : Tools Nilai Student     (tugas1_nilai_mahasiswa.cpp)
+namespace task1 { void run(); }  // Program 1 : Tools Nilai Mahasiswa   (tugas1_nilai_mahasiswa.cpp)
 namespace task2 { void run(); }  // Program 2 : Volume Tabung             (tugas2_volume_tabung.cpp)
 namespace task3 { void run(); }  // Program 3 : Luas Bangun yang Diarsir  (tugas3_luas_arsir.cpp)
 
@@ -42,15 +42,15 @@ namespace task3 { void run(); }  // Program 3 : Luas Bangun yang Diarsir  (tugas
 // saja, dikarenakan nama seperti warna atau kotak juga ada di berkas tugas dan tidak boleh bentrok saat digabung.
 namespace {
 
-    // ===== BAGIAN 3: WARNA DAN KOTAK TAMPILAN =====
-    // Menggunakan kode warna ANSI berfungsi untuk membedakan judul, pilihan yang ditegaskan, hasil akhir, dan
+    // ===== WARNA DAN KOTAK TAMPILAN =====
+    // Menggunakan kode warna ANSI berfungsi untuk membedakan judul, nomor menu, ajakan menekan Enter, dan
     // pesan kesalahan secara visual, dikarenakan terminal macOS, Linux, VS Code, dan Windows Terminal memahaminya.
     constexpr const char* ANSI_RESET  = "\033[0m";     // kembali ke tampilan normal
     constexpr const char* ANSI_BOLD  = "\033[1m";     // tebal: prompt dan label penting
     constexpr const char* ANSI_TITLE  = "\033[1;36m";  // cyan tebal: judul program dan judul kotak
-    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // hijau tebal: pilihan yang ditegaskan dan hasil akhir
+    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // hijau tebal: pesan penutup program
     constexpr const char* ANSI_ERROR  = "\033[1;31m";  // merah tebal: pesan kesalahan
-    constexpr const char* ANSI_HINT = "\033[33m";    // kuning: keterangan nilai bawaan [Enter = ...]
+    constexpr const char* ANSI_HINT = "\033[33m";    // kuning: ajakan "Tekan Enter untuk kembali ke menu..."
     constexpr const char* ANSI_DIM    = "\033[90m";    // abu-abu: garis kotak dan garis pembatas
 
     // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
@@ -61,7 +61,7 @@ namespace {
     void enableUtf8Console() {
     #ifdef _WIN32
         SetConsoleOutputCP(CP_UTF8);  // keluaran: byte UTF-8 ditampilkan sebagai karakter yang benar
-        SetConsoleCP(CP_UTF8);        // masukan: ketikan nama dengan huruf non-ASCII dibaca sebagai UTF-8
+        SetConsoleCP(CP_UTF8);        // masukan: ketikan dengan huruf non-ASCII dibaca sebagai UTF-8, sama dengan keluarannya
     #endif
     }
 
@@ -92,7 +92,7 @@ namespace {
     }
 
     // Berfungsi untuk menentukan apakah sebuah code point Unicode memakai dua kolom di terminal (aksara CJK, Hangul,
-    // emoji), dikarenakan tanpa ini kolom tabel bergeser untuk nama berhuruf Jepang/Tionghoa/Korea atau beremoji.
+    // emoji), dikarenakan tanpa ini lebar kotak dan pembungkusan baris salah bila teks memuat aksara lebar atau emoji.
     bool isWideCodePoint(unsigned codePoint) {
         return (codePoint >= 0x1100 && codePoint <= 0x115F) || (codePoint >= 0x2E80 && codePoint <= 0xA4CF)
             || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF)
@@ -101,7 +101,7 @@ namespace {
             || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF);
     }
 
-    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (π, ², ³, garis kotak) dihitung
+    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (mis. garis kotak) dihitung
     // satu kolom, aksara lebar (CJK, emoji) dua kolom, dan kode warna ANSI nol kolom, dikarenakan ketiganya
     // tidak memakai ruang sebanyak byte-nya. Byte awal UTF-8 menentukan jumlah byte lanjutan yang dirangkai.
     std::size_t displayWidth(std::string_view text) {
@@ -126,8 +126,8 @@ namespace {
     }
 
     // Berfungsi membaca lebar terminal saat ini (jumlah kolom) setiap kali dipanggil, sehingga tampilan ikut
-    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai 80 kolom,
-    // ukuran bawaan terminal pada umumnya. Menggunakan batas bawah 50 dikarenakan di bawah itu tabel tidak bisa rapi.
+    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai variabel COLUMNS, lalu 80 kolom,
+    // ukuran bawaan terminal pada umumnya. Menggunakan batas bawah 50 dikarenakan di bawah itu kotak menu tidak bisa rapi.
     int terminalWidth() {
         int cols = 0;
     #ifdef _WIN32
@@ -144,7 +144,7 @@ namespace {
 
     // Berfungsi memotong satu baris teks yang lebih panjang dari 'maxWidth' kolom menjadi beberapa baris, memotong
     // pada spasi, dan memberi baris lanjutan indentasi 'gantung' agar tetap sejajar dengan isi setelah label.
-    // Dipakai drawBox() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
+    // Dipakai drawBox() dan printError() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) {
         std::vector<std::string> result;
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2;  // indentasi terlalu besar untuk jendela sempit: pakai 2 spasi saja
@@ -170,7 +170,7 @@ namespace {
     }
 
     // Berfungsi untuk menggambar kotak berjudul berisi baris-baris teks. Lebar kotak mengikuti baris terpanjang,
-    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (bungkus), dengan
+    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (wrapText), dengan
     // indentasi gantung sejajar label bila baris berpola "Label : isi". Menggunakan kotak dikarenakan informasi
     // (petunjuk, menu, hasil) jadi terpisah jelas dari pertanyaan.
     void drawBox(std::string_view title, const std::vector<std::string>& lines) {

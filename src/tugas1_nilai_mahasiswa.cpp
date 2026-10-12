@@ -1,6 +1,6 @@
 /*
  * Tugas Praktikum 1 — Modul 1: Input dan Output
- * Program 1 : Tools Nilai Student
+ * Program 1 : Tools Nilai Mahasiswa
  * Alur : pengguna mengisi Nama Mata Kuliah dan jumlah mahasiswa (tidak dibatasi 3), lalu nama lengkap
  *        dan nilai (boleh desimal, 87.5 maupun 87,5) tiap mahasiswa; program menampilkan rekap nilai,
  *        nilai total, dan nilai rata-rata. Setiap input divalidasi dan diminta ulang bila salah;
@@ -17,23 +17,23 @@
 
 // ===== BAGIAN 1: PUSTAKA (LIBRARY) YANG DIPAKAI =====
 // #include memuat pustaka standar C++ yang berisi fungsi dan tipe siap pakai.
-#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max saat menghitung lebar kolom nama dan kotak
+#include <algorithm>    // menggunakan <algorithm> berfungsi untuk std::max dan std::min saat menghitung lebar kolom nama dan kotak
 #include <cctype>       // menggunakan <cctype> berfungsi untuk std::isalpha dan std::isdigit (memeriksa jenis karakter)
 #include <cstddef>      // menggunakan <cstddef> berfungsi untuk tipe std::size_t (tipe ukuran string dan vector)
-#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, dan std::getenv
+#include <cstdlib>      // menggunakan <cstdlib> berfungsi untuk std::exit, EXIT_FAILURE, std::getenv, dan std::atoi
 #include <iomanip>      // menggunakan <iomanip> berfungsi untuk setw, left, right, fixed, setprecision
 #include <iostream>     // menggunakan <iostream> berfungsi untuk std::cin, std::cout, std::cerr
 #include <sstream>      // menggunakan <sstream> berfungsi untuk std::istringstream/ostringstream (teks <-> angka)
 #include <string>       // menggunakan <string> berfungsi untuk std::string (Nama Mata Kuliah, nama mahasiswa)
 #include <string_view>  // menggunakan <string_view> berfungsi untuk teks prompt yang hanya dibaca, tanpa disalin
 #include <vector>       // menggunakan <vector> berfungsi untuk daftar mahasiswa yang ukurannya ditentukan saat berjalan
-// Pustaka khusus sistem operasi untuk mendeteksi terminal dan mengaktifkan warna. Menggunakan #ifdef _WIN32
+// Pustaka khusus sistem operasi untuk mendeteksi terminal, membaca lebar jendela, mengaktifkan warna, dan UTF-8. Menggunakan #ifdef _WIN32
 // dikarenakan Windows dan macOS/Linux menyediakan fungsi yang berbeda untuk keperluan yang sama.
 #ifdef _WIN32
-    #ifndef NOMINMAX    // MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
+    #ifndef NOMINMAX    // menggunakan #ifndef dikarenakan MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
     #define NOMINMAX 1  // berfungsi mencegah windows.h mendefinisikan makro min/max yang merusak std::max
     #endif
-    #include <windows.h>    // GetStdHandle, GetConsoleMode, SetConsoleMode: mengaktifkan kode warna di Command Prompt
+    #include <windows.h>    // GetStdHandle, Get/SetConsoleMode (warna), SetConsoleOutputCP/SetConsoleCP (UTF-8), GetConsoleScreenBufferInfo (lebar jendela)
 #else
     #include <cstdio>       // fileno, stdout: dipakai bersama isatty
     #include <sys/ioctl.h>  // ioctl, TIOCGWINSZ, struct winsize: membaca lebar jendela terminal
@@ -56,9 +56,9 @@ namespace {
     constexpr double SCORE_MIN = 0.0;    // batas bawah 0 dikarenakan nilai tidak mungkin negatif
     constexpr double SCORE_MAX = 100.0;  // batas atas 100 dikarenakan skala nilai mata kuliah 0-100
 
-    // Lebar kolom tabel rekap, dalam satuan karakter.
+    // Lebar kolom tabel rekap, lebar garis judul, dan batas panjang input teks, dalam satuan karakter.
     constexpr int         NO_COLUMN_WIDTH    = 5;   // menggunakan int dikarenakan std::setw menerima lebar bertipe int
-    constexpr std::size_t NAME_COLUMN_MIN_WIDTH    = 20;  // menggunakan size_t dikarenakan dibandingkan dengan panjang std::string
+    constexpr std::size_t NAME_COLUMN_MIN_WIDTH    = 20;  // menggunakan size_t dikarenakan dibandingkan dengan hasil displayWidth() yang bertipe size_t
     constexpr int         SCORE_COLUMN_WIDTH = 8;   // menggunakan int dikarenakan std::setw menerima lebar bertipe int
     constexpr int         TITLE_WIDTH       = 60;  // lebar garis judul
     constexpr std::size_t NAME_MAX_LENGTH = 60;  // batas panjang nama berfungsi untuk menolak tempelan teks yang bukan nama
@@ -77,19 +77,19 @@ namespace {
     constexpr const char* ANSI_RESET  = "\033[0m";     // kembali ke tampilan normal
     constexpr const char* ANSI_BOLD  = "\033[1m";     // tebal: prompt dan label penting
     constexpr const char* ANSI_TITLE  = "\033[1;36m";  // cyan tebal: judul program dan judul kotak
-    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // hijau tebal: pilihan yang ditegaskan dan hasil akhir
+    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // hijau tebal: hasil akhir (nilai total dan rata-rata)
     constexpr const char* ANSI_ERROR  = "\033[1;31m";  // merah tebal: pesan kesalahan
     constexpr const char* ANSI_DIM    = "\033[90m";    // abu-abu: garis kotak dan garis pembatas
 
-    // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
-    // π, ², ³, garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
+    // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan garis
+    // kotak dan nama berhuruf non-ASCII (é, ö) dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
     // masih memakai code page lama (mis. 437) yang menampilkannya sebagai huruf acak. Pengaturan ini berlaku untuk
     // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur jalankan.bat. Di macOS/Linux
     // terminal sudah UTF-8, sehingga fungsi ini tidak melakukan apa-apa.
     void enableUtf8Console() {
     #ifdef _WIN32
         SetConsoleOutputCP(CP_UTF8);  // keluaran: byte UTF-8 ditampilkan sebagai karakter yang benar
-        SetConsoleCP(CP_UTF8);        // masukan: ketikan nama dengan huruf non-ASCII dibaca sebagai UTF-8
+        SetConsoleCP(CP_UTF8);        // masukan: ketikan dengan huruf non-ASCII dibaca sebagai UTF-8, sama dengan keluarannya
     #endif
     }
 
@@ -129,7 +129,7 @@ namespace {
             || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF);
     }
 
-    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (π, ², ³, garis kotak) dihitung
+    // Berfungsi untuk menghitung lebar teks di layar: karakter UTF-8 multibyte (é, ö, garis kotak) dihitung
     // satu kolom, aksara lebar (CJK, emoji) dua kolom, dan kode warna ANSI nol kolom, dikarenakan ketiganya
     // tidak memakai ruang sebanyak byte-nya. Byte awal UTF-8 menentukan jumlah byte lanjutan yang dirangkai.
     std::size_t displayWidth(std::string_view text) {
@@ -154,7 +154,7 @@ namespace {
     }
 
     // Berfungsi membaca lebar terminal saat ini (jumlah kolom) setiap kali dipanggil, sehingga tampilan ikut
-    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai 80 kolom,
+    // menyesuaikan bila jendela diubah ukurannya. Bila tidak diketahui (keluaran bukan terminal), dipakai variabel COLUMNS, lalu 80 kolom,
     // ukuran bawaan terminal pada umumnya. Menggunakan batas bawah 50 dikarenakan di bawah itu tabel tidak bisa rapi.
     int terminalWidth() {
         int cols = 0;
@@ -172,7 +172,7 @@ namespace {
 
     // Berfungsi memotong satu baris teks yang lebih panjang dari 'maxWidth' kolom menjadi beberapa baris, memotong
     // pada spasi, dan memberi baris lanjutan indentasi 'gantung' agar tetap sejajar dengan isi setelah label.
-    // Dipakai drawBox() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
+    // Dipakai drawBox() dan printError() dikarenakan teks tidak boleh dipotong sembarangan oleh jendela terminal yang sempit.
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) {
         std::vector<std::string> result;
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2;  // indentasi terlalu besar untuk jendela sempit: pakai 2 spasi saja
@@ -198,7 +198,7 @@ namespace {
     }
 
     // Berfungsi untuk menggambar kotak berjudul berisi baris-baris teks. Lebar kotak mengikuti baris terpanjang,
-    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (bungkus), dengan
+    // tetapi tidak pernah melebihi lebar terminal: baris yang terlalu panjang dibungkus lebih dulu (wrapText), dengan
     // indentasi gantung sejajar label bila baris berpola "Label : isi". Menggunakan kotak dikarenakan informasi
     // (petunjuk, menu, hasil) jadi terpisah jelas dari pertanyaan.
     void drawBox(std::string_view title, const std::vector<std::string>& lines) {
@@ -376,7 +376,7 @@ namespace {
         }
     }
 
-    // Berfungsi untuk meminta bilangan bulat dalam rentang [minimal, maksimal]; dipakai untuk jumlah mahasiswa.
+    // Berfungsi untuk meminta bilangan bulat dalam rentang [minValue, maxValue]; dipakai untuk jumlah mahasiswa.
     int readInteger(std::string_view prompt, int minValue, int maxValue) {
         while (true) {  // diulang dikarenakan input salah harus diminta lagi
             // Menggunakan pembacaan sebagai teks lebih dulu berfungsi untuk menolak ketikan salah (abc, 2.5)
@@ -384,8 +384,9 @@ namespace {
             const std::string text = normalizeSpaces(readLine(prompt));
             std::istringstream parser(text);  // menggunakan istringstream berfungsi untuk membaca angka dari teks
             int number = 0;  // menggunakan int dikarenakan yang diminta bilangan bulat; 0 agar tidak berisi nilai acak
-            // Empat syarat dengan && (AND) berfungsi untuk memastikan input sah: teks hanya berisi digit 0-9 (menolak
-            // +3, 3.0, 1e3, "3 orang"), terbaca sebagai bilangan bulat tanpa sisa karakter, dan berada dalam rentang.
+            // Lima syarat dengan && (AND) berfungsi untuk memastikan input sah: teks hanya berisi digit 0-9 (menolak
+            // +3, 3.0, 1e3, "3 orang"), terbaca sebagai bilangan bulat, tanpa sisa karakter, tidak kurang dari minValue,
+            // dan tidak lebih dari maxValue.
             if (isAllDigits(text) && parser >> number && (parser >> std::ws).eof() && number >= minValue && number <= maxValue) {
                 return number;
             }
@@ -395,7 +396,7 @@ namespace {
     }
 
     // Berfungsi untuk mengubah teks menjadi bilangan desimal; mengembalikan true bila teks sah.
-    // Parameter double& hasil berfungsi untuk mengirim angka kembali, dikarenakan nilai kembalian (bool)
+    // Parameter double& result berfungsi untuk mengirim angka kembali, dikarenakan nilai kembalian (bool)
     // sudah dipakai untuk status sah/tidak.
     bool parseDecimal(std::string text, double& result) {
         if (!isDecimalFormat(text)) return false;  // format diperiksa dulu agar hanya tulisan angka yang diterima
@@ -406,15 +407,15 @@ namespace {
         return (parser >> result) && (parser >> std::ws).eof();  // sah bila terbaca sebagai angka tanpa sisa karakter
     }
 
-    // Berfungsi untuk meminta nilai desimal dalam rentang [minimal, maksimal]; koma (87,5) diterima.
+    // Berfungsi untuk meminta nilai desimal dalam rentang [minValue, maxValue]; koma (87,5) diterima.
     double readDecimal(std::string_view prompt, double minValue, double maxValue) {
         while (true) {
             double score = 0.0;  // menggunakan double dikarenakan nilai boleh desimal; 0.0 sebagai nilai awal yang jelas
             if (parseDecimal(normalizeSpaces(readLine(prompt)), score) && score >= minValue && score <= maxValue) {
                 return score;
             }
-            // Menggunakan ostringstream terpisah berfungsi agar batas tampil "0-100", bukan "0.00-100.00",
-            // dikarenakan format std::cout mungkin sudah diubah menjadi 2 desimal.
+            // Menggunakan ostringstream terpisah berfungsi agar batas tampil "0-100", bukan "0.000000-100.000000",
+            // dikarenakan std::to_string untuk double selalu menulis 6 angka desimal.
             std::ostringstream range;
             range << minValue << "-" << maxValue;
             printError("  [!] Nilai harus angka " + range.str() + ", hanya digit dengan satu pemisah desimal"
@@ -475,7 +476,7 @@ namespace {
 
 // ===== BAGIAN 6: PROGRAM UTAMA TUGAS 1 =====
 // Menggunakan namespace task1 berfungsi untuk memberi nama yang khas pada fungsi run(), dikarenakan
-// program bermenu (main.cpp) memanggilnya sebagai tugas1::run() dan tugas lain punya run() juga.
+// program bermenu (main.cpp) memanggilnya sebagai task1::run() dan tugas lain punya run() juga.
 namespace task1 {
 
     void run() {
@@ -510,9 +511,9 @@ namespace task1 {
 
         // --- Tahap perhitungan: total, rata-rata, dan lebar kolom nama ---
         double      total     = 0.0;             // menggunakan double dikarenakan penjumlahan nilai desimal harus tetap desimal
-        std::size_t nameWidth = NAME_COLUMN_MIN_WIDTH;  // menggunakan size_t dikarenakan dibandingkan dengan m.nama.size()
+        std::size_t nameWidth = NAME_COLUMN_MIN_WIDTH;  // menggunakan size_t dikarenakan dibandingkan dengan displayWidth(student.name) yang bertipe size_t
         for (const Student& student : students) {  // const& dikarenakan data hanya dibaca, tidak diubah, dan tidak disalin
-            total += student.score;  // menggunakan += berfungsi untuk menjumlahkan nilai ke total (singkatan total = total + m.nilai)
+            total += student.score;  // menggunakan += berfungsi untuk menjumlahkan nilai ke total (singkatan total = total + student.score)
             nameWidth = std::max(nameWidth, displayWidth(student.name) + 2);  // std::max berfungsi menyimpan lebar terbesar; + 2 = jarak ke kolom nilai
         }
         // Menggunakan pembagian double dikarenakan hasilnya harus desimal (pada int, 11/2 = 5; pada double 5.5).
