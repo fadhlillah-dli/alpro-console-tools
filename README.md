@@ -66,6 +66,19 @@ Skrip ini mengunduh paket rilis terbaru lewat `curl`, memverifikasi SHA-256, dan
 `~/.local/bin`. Karena tidak lewat browser, berkasnya tidak diberi tanda karantina, sehingga **tidak ada dialog
 Gatekeeper** di macOS. Lalu jalankan dengan `tugas_alpro`.
 
+### Windows: satu perintah (disarankan)
+
+Buka PowerShell (Windows PowerShell 5.1 bawaan atau PowerShell 7), lalu:
+
+```powershell
+irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.ps1 | iex
+```
+
+Skrip ini mengunduh paket rilis terbaru, memverifikasi SHA-256, memasang `tugas_alpro.exe` ke
+`%LOCALAPPDATA%\Programs\alpro-console-tools`, melepas tanda unduhan sehingga **tidak ada layar SmartScreen**, dan
+menambahkan folder itu ke PATH pengguna. Tidak perlu hak Administrator. Buka jendela terminal baru, lalu jalankan
+`tugas_alpro`.
+
 ### macOS dan Linux: Homebrew
 
 ```bash
@@ -151,6 +164,7 @@ alpro-console-tools/
 ├── .claude/settings.json            setelan Claude Code yang dibagikan (tanpa atribusi AI pada commit/PR)
 ├── CLAUDE.md                        aturan kerja untuk Claude Code: konvensi, perintah build dan uji asap
 ├── install.sh                       pemasang satu perintah untuk macOS/Linux (unduh rilis + verifikasi SHA-256)
+├── install.ps1                      pemasang satu perintah untuk Windows lewat PowerShell (unduh rilis + verifikasi SHA-256)
 ├── Makefile · jalankan.command · jalankan.bat
 ├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
 └── README.md
@@ -174,9 +188,10 @@ Identifier berbahasa Inggris; komentar dan teks tampilan berbahasa Indonesia. Ko
 
 ## Catatan tampilan
 
-- Simbol π, ², ³, garis kotak, dan sketsa Braille memakai UTF-8. macOS/Linux langsung mendukung; di Windows
-  `jalankan.bat` sudah memanggil `chcp 65001`, atau ketik `chcp 65001` dulu di terminal. Font monospace modern
-  (Menlo, SF Mono, Cascadia Mono, DejaVu Sans Mono) menampilkan Braille dengan baik.
+- Simbol π, ², ³, garis kotak, dan sketsa Braille memakai UTF-8. macOS/Linux langsung mendukung; di Windows program
+  mengatur konsolnya sendiri ke UTF-8 (code page 65001) saat dimulai, sehingga tidak perlu `chcp 65001` manual
+  (peluncur `jalankan.bat` juga memanggilnya). Font monospace modern (Menlo, SF Mono, Cascadia Mono, DejaVu Sans
+  Mono) menampilkan Braille dengan baik; Command Prompt klasik dengan font Consolas menampilkannya sebagai kotak.
 - Warna mengikuti konvensi CLI: mati otomatis bila keluaran dialihkan ke berkas atau `NO_COLOR` ada; `FORCE_COLOR`
   memaksanya aktif. Di Windows, program mengaktifkan mode virtual terminal sendiri.
 

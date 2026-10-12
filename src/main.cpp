@@ -53,6 +53,18 @@ namespace {
     constexpr const char* ANSI_HINT = "\033[33m";    // kuning: keterangan nilai bawaan [Enter = ...]
     constexpr const char* ANSI_DIM    = "\033[90m";    // abu-abu: garis kotak dan garis pembatas
 
+    // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
+    // π, ², ³, garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
+    // masih memakai code page lama (mis. 437) yang menampilkannya sebagai huruf acak. Pengaturan ini berlaku untuk
+    // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur Jalankan.bat. Di macOS/Linux
+    // terminal sudah UTF-8, sehingga fungsi ini tidak melakukan apa-apa.
+    void enableUtf8Console() {
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);  // keluaran: byte UTF-8 ditampilkan sebagai karakter yang benar
+        SetConsoleCP(CP_UTF8);        // masukan: ketikan nama dengan huruf non-ASCII dibaca sebagai UTF-8
+    #endif
+    }
+
     // Berfungsi untuk menentukan apakah warna boleh dipakai. Warna dimatikan bila variabel lingkungan NO_COLOR
     // ada (konvensi umum program CLI) atau keluaran bukan terminal (mis. dialihkan ke berkas), dan dipaksa
     // aktif bila FORCE_COLOR ada. Di Windows, mode "virtual terminal" diaktifkan agar Command Prompt memahami
@@ -263,6 +275,7 @@ namespace {
 // Menggunakan int main() dan return 0 dikarenakan standar C++ mewajibkan main bertipe int;
 // 0 menandakan program selesai tanpa error.
 int main() {
+    enableUtf8Console();  // berfungsi menyiapkan konsol Windows untuk UTF-8 sebelum ada keluaran apa pun
     printBanner();  // berfungsi untuk menampilkan identitas sekali di awal
 
     while (true) {  // menggunakan while (true) berfungsi untuk menampilkan menu berulang sampai pengguna memilih keluar

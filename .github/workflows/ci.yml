@@ -53,3 +53,36 @@ jobs:
           echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "luas arsir salah"; exit 1; }
           echo "$out" | grep -q "Nilai Rata-Rata        70.00" || { echo "rata-rata salah"; exit 1; }
           echo "Uji asap lulus"
+
+      # Dijalankan di shell MSYS2 dikarenakan biner CI tidak ditautkan statis dan membutuhkan DLL libstdc++ dari PATH MSYS2.
+      - name: Uji asap (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          out=$(printf '2\n\n2\n2\n14\n10\n\n3\n\n2\n14\n\n1\nAlgoritma dan Pemrograman\n3\nA\n80\nB\n60\nC\n70\n\n0\n' | ./tugas_alpro.exe)
+          echo "$out" | grep -q "Volume Tabung         : 1540.00" || { echo "volume salah"; exit 1; }
+          echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "luas arsir salah"; exit 1; }
+          echo "$out" | grep -q "Nilai Rata-Rata        70.00" || { echo "rata-rata salah"; exit 1; }
+          echo "Uji asap lulus"
+
+      # Menguji pemasang satu perintah persis seperti pengguna (irm | iex) pada kedua PowerShell yang ada di Windows,
+      # memakai rilis terbaru yang sudah terbit; ALPRO_BIN_DIR mengarahkan pemasangan ke folder sementara runner.
+      - name: Uji install.ps1 (Windows PowerShell 5.1)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $env:ALPRO_BIN_DIR = Join-Path $env:RUNNER_TEMP 'alpro-ps51'
+          Get-Content -Raw install.ps1 | Invoke-Expression
+          $out = "3`n`n2`n14`n`n0`n" | & (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe')
+          if (-not ($out -match 'Luas Bangun yang Diarsir : 42\.00')) { throw 'luas arsir salah' }
+          "Uji install.ps1 lulus (PowerShell $($PSVersionTable.PSVersion))"
+
+      - name: Uji install.ps1 (PowerShell 7)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:ALPRO_BIN_DIR = Join-Path $env:RUNNER_TEMP 'alpro-ps7'
+          Get-Content -Raw install.ps1 | Invoke-Expression
+          $out = "3`n`n2`n14`n`n0`n" | & (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe')
+          if (-not ($out -match 'Luas Bangun yang Diarsir : 42\.00')) { throw 'luas arsir salah' }
+          "Uji install.ps1 lulus (PowerShell $($PSVersionTable.PSVersion))"

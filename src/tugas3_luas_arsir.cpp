@@ -72,6 +72,18 @@ namespace {
     constexpr const char* ANSI_HINT = "\033[33m";    // kuning: keterangan nilai bawaan [Enter = ...]
     constexpr const char* ANSI_DIM    = "\033[90m";    // abu-abu: garis kotak dan garis pembatas
 
+    // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
+    // π, ², ³, garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
+    // masih memakai code page lama (mis. 437) yang menampilkannya sebagai huruf acak. Pengaturan ini berlaku untuk
+    // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur Jalankan.bat. Di macOS/Linux
+    // terminal sudah UTF-8, sehingga fungsi ini tidak melakukan apa-apa.
+    void enableUtf8Console() {
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);  // keluaran: byte UTF-8 ditampilkan sebagai karakter yang benar
+        SetConsoleCP(CP_UTF8);        // masukan: ketikan nama dengan huruf non-ASCII dibaca sebagai UTF-8
+    #endif
+    }
+
     // Berfungsi untuk menentukan apakah warna boleh dipakai. Warna dimatikan bila variabel lingkungan NO_COLOR
     // ada (konvensi umum program CLI) atau keluaran bukan terminal (mis. dialihkan ke berkas), dan dipaksa
     // aktif bila FORCE_COLOR ada. Di Windows, mode "virtual terminal" diaktifkan agar Command Prompt memahami
@@ -518,6 +530,7 @@ namespace {
 namespace task3 {
 
     void run() {
+        enableUtf8Console();  // dipanggil di sini agar program mandiri (tanpa menu) juga benar; aman dipanggil berulang
         printTitle("PROGRAM 3 : LUAS BANGUN YANG DIARSIR (PERSEGI - LINGKARAN)");
         std::cout << "Rumus : Luas Arsir = (S x S) - (Pi x (S/2) x (S/2))\n"
                   << "        Pi = \u03c0 (modul menulisnya phi)\n\n";
