@@ -76,8 +76,14 @@ irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/in
 
 Skrip ini mengunduh paket rilis terbaru, memverifikasi SHA-256, memasang `tugas_alpro.exe` ke
 `%LOCALAPPDATA%\Programs\alpro-console-tools`, melepas tanda unduhan sehingga **tidak ada layar SmartScreen**, dan
-menambahkan folder itu ke PATH pengguna. Tidak perlu hak Administrator. Buka jendela terminal baru, lalu jalankan
-`tugas_alpro`.
+menambahkan folder itu ke PATH pengguna. Tidak perlu hak Administrator. Setelah itu jalankan `tugas_alpro` (di jendela
+terminal baru bila perintah belum dikenal).
+
+Perintah `irm` hanya ada di PowerShell. Dari **Command Prompt** (cmd), pakai bentuk ini:
+
+```bat
+powershell -c "irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.ps1 | iex"
+```
 
 ### macOS dan Linux: Homebrew
 

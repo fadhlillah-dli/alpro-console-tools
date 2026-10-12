@@ -2,11 +2,12 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.3] - 2026-10-12
 
 ### Ditambahkan
-- `install.ps1`: pemasang satu perintah untuk Windows lewat PowerShell (`irm … | iex`), dengan verifikasi SHA-256, tanpa
-  hak Administrator dan tanpa layar SmartScreen; diuji otomatis di CI pada Windows PowerShell 5.1 dan PowerShell 7.
+- `install.ps1`: pemasang satu perintah untuk Windows lewat PowerShell (`irm … | iex`, atau `powershell -c "…"` dari
+  Command Prompt), dengan verifikasi SHA-256, tanpa hak Administrator dan tanpa layar SmartScreen; diuji otomatis di CI
+  pada Windows PowerShell 5.1 dan PowerShell 7.
 - Uji asap CI juga dijalankan di Windows.
 - `CLAUDE.md` (aturan kerja, perintah build dan uji asap) dan `.claude/settings.json` (tanpa atribusi AI pada commit/PR).
 
