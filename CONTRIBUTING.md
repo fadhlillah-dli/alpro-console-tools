@@ -6,7 +6,9 @@ Terima kasih sudah tertarik ikut mengembangkan proyek ini. Alurnya singkat:
 2. Ikuti konvensi kode di README (identifier bahasa Inggris, komentar bahasa Indonesia dengan pola
    "menggunakan X berfungsi untuk Y / dikarenakan Z"). Komentar ditulis untuk mahasiswa semester awal: sebutkan dulu
    apa konstruksinya dengan kata sederhana, lalu apa yang dilakukannya di baris itu dan mengapa; jangan menyebut fungsi
-   atau variabel yang tidak ada di baris itu tanpa penunjuk lokasinya.
+   atau variabel yang tidak ada di baris itu tanpa penunjuk lokasinya. Nadanya seperti teman yang sabar menjelaskan:
+   mulai dari gambaran besar, kalimat pendek, istilah dijelaskan sekali saat pertama muncul (contoh: blok
+   `#ifdef _WIN32` dan fungsi `colorsEnabled()` di `src/main.cpp`).
 3. Pastikan kompilasi bersih tanpa peringatan:
    `g++ -std=c++17 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp`
    dan tiap berkas tugas juga bisa dikompilasi sendiri (tanpa `-DBUILD_WITH_MENU`).
