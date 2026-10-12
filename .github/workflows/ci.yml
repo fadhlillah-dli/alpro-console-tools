@@ -61,11 +61,13 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          out=$(printf '3\n\n2\n14\n\n0\n' | sh coba.sh)
+          out=$(printf '3\n\n2\n14\n\n0\n' | sh coba.sh) || { echo "$out"; echo "coba.sh keluar dengan status non-nol"; exit 1; }
           echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "$out"; echo "luas arsir salah"; exit 1; }
           # Folder induk sementara dibaca dari mktemp sendiri, dikarenakan di macOS mktemp memakai DARWIN_USER_TEMP_DIR, bukan TMPDIR.
+          # Status find diabaikan (|| true), dikarenakan /tmp runner Linux berisi folder pengguna lain yang tidak bisa dimasuki dan
+          # pipefail bawaan GitHub akan menggagalkan langkah ini tanpa pesan.
           root=$(dirname "$(mktemp -u)")
-          sisa=$(find "$root" -maxdepth 2 -name tugas_alpro 2>/dev/null | wc -l)
+          sisa=$({ find "$root" -maxdepth 2 -name tugas_alpro 2>/dev/null || true; } | wc -l)
           [ "$sisa" -eq 0 ] || { echo "folder sementara tidak dihapus ($sisa sisa di $root)"; exit 1; }
           echo "coba.sh OK, tanpa sisa"
 
