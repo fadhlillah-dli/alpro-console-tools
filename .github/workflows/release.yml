@@ -79,8 +79,51 @@ jobs:
           path: paket
           merge-multiple: true
 
+      - name: Buat daftar SHA-256 semua paket
+        run: cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
+
       - name: Unggah ke halaman Release
         uses: softprops/action-gh-release@v2
         with:
           files: paket/*
           generate_release_notes: true
+
+      # Memperbarui formula Homebrew di repositori fadhlillah-dli/homebrew-tap agar `brew install` langsung memakai
+      # versi ini. Butuh secret HOMEBREW_TAP_TOKEN (fine-grained PAT, izin Contents: write pada homebrew-tap);
+      # bila secret belum ada, langkah ini dilewati tanpa menggagalkan rilis.
+      - name: Perbarui formula Homebrew
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        if: env.TAP_TOKEN != ''
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          tarball="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          sha="$(curl -fsSL "$tarball" | sha256sum | cut -d' ' -f1)"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/${GITHUB_REPOSITORY_OWNER}/homebrew-tap.git" tap \
+            || { echo "Repositori homebrew-tap belum ada atau token tidak berlaku; langkah formula dilewati."; exit 0; }
+          mkdir -p tap/Formula
+          cat > tap/Formula/alpro-console-tools.rb <<EOF
+          class AlproConsoleTools < Formula
+            desc "Program konsol C++17 untuk praktikum Algoritma & Pemrograman: rekap nilai, volume tabung, luas arsir"
+            homepage "https://github.com/${GITHUB_REPOSITORY}"
+            url "${tarball}"
+            sha256 "${sha}"
+            license "MIT"
+
+            def install
+              system ENV.cxx, "-std=c++17", "-O2", "-DBUILD_WITH_MENU", "-o", "tugas_alpro", *Dir["src/*.cpp"]
+              bin.install "tugas_alpro"
+            end
+
+            test do
+              output = pipe_output("#{bin}/tugas_alpro", "3\n\n2\n14\n\n0\n")
+              assert_match "42.00", output
+            end
+          end
+          EOF
+          cd tap
+          git config user.name "${GITHUB_REPOSITORY_OWNER}"
+          git config user.email "${GITHUB_REPOSITORY_OWNER}@users.noreply.github.com"
+          git add Formula/alpro-console-tools.rb
+          git commit -m "alpro-console-tools ${version}" || echo "formula tidak berubah"
+          git push

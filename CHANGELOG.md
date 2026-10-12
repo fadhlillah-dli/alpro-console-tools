@@ -2,6 +2,17 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [1.0.2] - 2026-10-12
+
+### Ditambahkan
+- `install.sh`: pemasang satu perintah untuk macOS/Linux lewat curl (tanpa dialog Gatekeeper), dengan verifikasi SHA-256.
+- Formula Homebrew (`brew install fadhlillah-dli/tap/alpro-console-tools`), diperbarui otomatis tiap rilis.
+- Berkas `SHA256SUMS` pada setiap rilis.
+
+### Diperbaiki
+- Peluncur Windows melepas Mark of the Web dari `tugas_alpro.exe` (Unblock-File) agar SmartScreen hanya bertanya
+  sekali, pada peluncurnya.
+
 ## [1.0.1] - 2026-10-12
 
 ### Diperbaiki
@@ -9,8 +20,6 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 - Peluncur macOS melepas tanda karantina dari `tugas_alpro` sehingga paket unduhan bisa dijalankan lewat
   klik kanan → Open tanpa membuka System Settings.
 - Workflow rilis memakai satu job publish agar catatan rilis tidak tergandakan.
-- Peluncur Windows melepas Mark of the Web dari `tugas_alpro.exe` (Unblock-File) agar SmartScreen hanya bertanya
-  sekali, pada peluncurnya.
 - README: bagian unduh siap pakai dan badge CI.
 
 ## [1.0.0] - 2026-10-12

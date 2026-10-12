@@ -54,21 +54,39 @@ Pilihan Anda [0-3] : 2
   mengecil, keterangan pindah ke bawah gambar bila jendela sempit.
 - **Setiap baris berkomentar** (bahasa Indonesia) menjelaskan apa yang dipakai dan mengapa, cocok untuk belajar.
 
-## Unduh siap pakai (tanpa kompilasi)
+## Pemasangan
 
-Setiap rilis menyertakan program yang sudah dikompilasi di halaman
-[**Releases**](../../releases/latest): `…-macos-universal.zip` (Apple Silicon dan Intel), `…-windows-x86_64.zip`,
-dan `…-linux-x86_64.tar.gz`. Ekstrak, lalu jalankan peluncurnya. Tidak ada instalasi dan tidak butuh internet.
+### macOS dan Linux: satu perintah (disarankan)
 
-Program tidak ditandatangani Apple/Microsoft, jadi pada pemakaian pertama:
+```bash
+curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.sh | sh
+```
 
-- macOS: klik **kanan** `Jalankan.command` → Open → Open. Jangan klik dua kali `tugas_alpro` secara langsung; macOS
-  akan menolaknya ("Not Opened"). Peluncur melepas tanda karantina dari program lalu menjalankannya di Terminal.
-- Windows: klik dua kali `Jalankan.bat`; pada layar biru "Windows protected your PC" klik tautan **More info** lalu
-  **Run anyway** (sekali). Peluncur melepas tanda unduhan dari `tugas_alpro.exe` sehingga tidak ditanya lagi.
-- Linux: `sh jalankan.sh` dari terminal.
+Skrip ini mengunduh paket rilis terbaru lewat `curl`, memverifikasi SHA-256, dan memasang `tugas_alpro` ke
+`~/.local/bin`. Karena tidak lewat browser, berkasnya tidak diberi tanda karantina, sehingga **tidak ada dialog
+Gatekeeper** di macOS. Lalu jalankan dengan `tugas_alpro`.
 
-Rincian ada di `CATATAN-RILIS.txt` dalam paket.
+### macOS dan Linux: Homebrew
+
+```bash
+brew install fadhlillah-dli/tap/alpro-console-tools
+```
+
+Homebrew mengambil source code rilis dan mengompilasinya di mesin Anda (beberapa detik); program yang dikompilasi
+lokal juga tidak terkena Gatekeeper. Perbarui dengan `brew upgrade alpro-console-tools`.
+
+### Paket siap pakai (zip) untuk yang memilih cara klik
+
+Halaman [**Releases**](../../releases/latest) menyertakan `…-macos-universal.zip` (Apple Silicon dan Intel),
+`…-windows-x86_64.zip`, dan `…-linux-x86_64.tar.gz`, masing-masing dengan peluncur klik-dua-kali dan berkas
+`SHA256SUMS` untuk verifikasi. Program tidak ditandatangani Apple/Microsoft (keduanya berbayar), jadi berkas yang
+diunduh **lewat browser** diperiksa pada pemakaian pertama:
+
+- macOS: klik kanan `Jalankan.command` → Open → Open; bila macOS tetap menolak ("Not Opened"), buka System Settings →
+  Privacy & Security → **Open Anyway** sekali. Peluncur melepas tanda karantina dari `tugas_alpro` setelah itu.
+- Windows: klik dua kali `Jalankan.bat`; pada layar "Windows protected your PC" klik **More info** → **Run anyway**
+  (sekali). Peluncur melepas tanda unduhan dari `tugas_alpro.exe` sehingga tidak ditanya lagi.
+- Linux: `sh jalankan.sh`.
 
 ## Kompilasi sendiri
 
@@ -130,6 +148,7 @@ alpro-console-tools/
 ├── dist/                            peluncur dan catatan untuk paket rilis
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
+├── install.sh                       pemasang satu perintah untuk macOS/Linux (unduh rilis + verifikasi SHA-256)
 ├── Makefile · jalankan.command · jalankan.bat
 ├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
 └── README.md
