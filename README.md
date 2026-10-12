@@ -148,6 +148,8 @@ alpro-console-tools/
 ├── dist/                            peluncur dan catatan untuk paket rilis
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
+├── .claude/settings.json            setelan Claude Code yang dibagikan (tanpa atribusi AI pada commit/PR)
+├── CLAUDE.md                        aturan kerja untuk Claude Code: konvensi, perintah build dan uji asap
 ├── install.sh                       pemasang satu perintah untuk macOS/Linux (unduh rilis + verifikasi SHA-256)
 ├── Makefile · jalankan.command · jalankan.bat
 ├── CONTRIBUTING.md · CHANGELOG.md · LICENSE

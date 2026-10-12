@@ -2,11 +2,22 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Ditambahkan
+- `CLAUDE.md` (aturan kerja, perintah build dan uji asap) dan `.claude/settings.json` (tanpa atribusi AI pada commit/PR).
+
+### Diperbaiki
+- Langkah formula Homebrew di workflow rilis: `pipefail` agar unduhan tarball yang gagal menghentikan langkah, `desc`
+  dipendekkan ke batas 80 karakter `brew audit`, `brew test` memeriksa exit code, dan secret yang belum ada atau tap
+  yang tidak bisa diakses dicatat sebagai peringatan pada ringkasan run.
+
 ## [1.0.2] - 2026-10-12
 
 ### Ditambahkan
 - `install.sh`: pemasang satu perintah untuk macOS/Linux lewat curl (tanpa dialog Gatekeeper), dengan verifikasi SHA-256.
-- Formula Homebrew (`brew install fadhlillah-dli/tap/alpro-console-tools`), diperbarui otomatis tiap rilis.
+- Formula Homebrew (`brew install fadhlillah-dli/tap/alpro-console-tools`) di repositori `fadhlillah-dli/homebrew-tap`;
+  untuk 1.0.2 diterbitkan manual, rilis berikutnya memperbaruinya otomatis lewat workflow bila secret `HOMEBREW_TAP_TOKEN` tersedia.
 - Berkas `SHA256SUMS` pada setiap rilis.
 
 ### Diperbaiki

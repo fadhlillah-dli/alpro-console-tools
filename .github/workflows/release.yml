@@ -90,7 +90,15 @@ jobs:
 
       # Memperbarui formula Homebrew di repositori fadhlillah-dli/homebrew-tap agar `brew install` langsung memakai
       # versi ini. Butuh secret HOMEBREW_TAP_TOKEN (fine-grained PAT, izin Contents: write pada homebrew-tap);
-      # bila secret belum ada, langkah ini dilewati tanpa menggagalkan rilis.
+      # bila secret belum ada, langkah ini dilewati tanpa menggagalkan rilis. Menggunakan echo "::warning::..." berfungsi
+      # untuk menampilkan secret yang belum ada atau tap yang tidak bisa diakses di ringkasan run, dikarenakan rilis
+      # tetap hijau dan tanpa itu formula yang basi tidak akan terlihat.
+      - name: Peringatan bila secret Homebrew belum ada
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        if: env.TAP_TOKEN == ''
+        run: echo "::warning::Secret HOMEBREW_TAP_TOKEN belum diset; formula Homebrew tidak diperbarui pada rilis ini."
+
       - name: Perbarui formula Homebrew
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -103,7 +111,7 @@ jobs:
           tarball="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
           sha="$(curl -fsSL "$tarball" | sha256sum | cut -d' ' -f1)"
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/${GITHUB_REPOSITORY_OWNER}/homebrew-tap.git" tap \
-            || { echo "Repositori homebrew-tap belum ada atau token tidak berlaku; langkah formula dilewati."; exit 0; }
+            || { echo "::warning::Repositori homebrew-tap belum ada atau token tidak berlaku; langkah formula dilewati."; exit 0; }
           mkdir -p tap/Formula
           cat > tap/Formula/alpro-console-tools.rb <<EOF
           class AlproConsoleTools < Formula
