@@ -30,7 +30,9 @@
 // Pustaka khusus sistem operasi untuk mendeteksi terminal dan mengaktifkan warna. Menggunakan #ifdef _WIN32
 // dikarenakan Windows dan macOS/Linux menyediakan fungsi yang berbeda untuk keperluan yang sama.
 #ifdef _WIN32
-    #define NOMINMAX        // berfungsi mencegah windows.h mendefinisikan makro min/max yang merusak std::max
+    #ifndef NOMINMAX    // MinGW sudah mendefinisikannya lewat pustaka standar; definisi ulang akan jadi peringatan
+    #define NOMINMAX 1  // berfungsi mencegah windows.h mendefinisikan makro min/max yang merusak std::max
+    #endif
     #include <windows.h>    // GetStdHandle, GetConsoleMode, SetConsoleMode: mengaktifkan kode warna di Command Prompt
 #else
     #include <cstdio>       // fileno, stdout: dipakai bersama isatty

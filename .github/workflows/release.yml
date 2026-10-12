@@ -22,7 +22,7 @@ jobs:
           - os: windows-latest
             label: windows-x86_64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Pasang GCC (Windows, MSYS2 UCRT64)
         if: runner.os == 'Windows'
