@@ -66,9 +66,10 @@ Skrip ini mengunduh paket rilis terbaru lewat `curl`, memverifikasi SHA-256, dan
 `~/.local/bin`. Karena tidak lewat browser, berkasnya tidak diberi tanda karantina, sehingga **tidak ada dialog
 Gatekeeper** di macOS. Lalu jalankan dengan `tugas_alpro`.
 
-### Windows: satu perintah (disarankan)
+### Windows: satu perintah di PowerShell (disarankan)
 
-Buka PowerShell (Windows PowerShell 5.1 bawaan atau PowerShell 7), lalu:
+Gunakan **PowerShell**, bukan Command Prompt: tekan tombol Windows, ketik `PowerShell`, Enter (atau buka tab PowerShell di
+Windows Terminal). Windows PowerShell 5.1 bawaan maupun PowerShell 7 sama-sama bisa. Lalu jalankan:
 
 ```powershell
 irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.ps1 | iex
@@ -77,13 +78,7 @@ irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/in
 Skrip ini mengunduh paket rilis terbaru, memverifikasi SHA-256, memasang `tugas_alpro.exe` ke
 `%LOCALAPPDATA%\Programs\alpro-console-tools`, melepas tanda unduhan sehingga **tidak ada layar SmartScreen**, dan
 menambahkan folder itu ke PATH pengguna. Tidak perlu hak Administrator. Setelah itu jalankan `tugas_alpro` (di jendela
-terminal baru bila perintah belum dikenal).
-
-Perintah `irm` hanya ada di PowerShell. Dari **Command Prompt** (cmd), pakai bentuk ini:
-
-```bat
-powershell -c "irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/install.ps1 | iex"
-```
+terminal baru bila perintah belum dikenal); perintah ini berjalan di PowerShell maupun Command Prompt.
 
 ### macOS dan Linux: Homebrew
 
