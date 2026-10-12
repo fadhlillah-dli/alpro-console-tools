@@ -2,7 +2,7 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.4] - 2026-10-12
 
 ### Diperbaiki
 - Paket Linux ditautkan statis penuh (termasuk glibc) agar jalan di distro dengan glibc lebih lama dari runner rilis
