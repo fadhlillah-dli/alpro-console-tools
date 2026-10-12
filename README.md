@@ -138,15 +138,10 @@ alpro-console-tools/
 │   ├── tugas1_nilai_mahasiswa.cpp   Program 1 — lengkap, bisa dikompilasi sendiri
 │   ├── tugas2_volume_tabung.cpp     Program 2 — lengkap, bisa dikompilasi sendiri
 │   └── tugas3_luas_arsir.cpp        Program 3 — lengkap, bisa dikompilasi sendiri
-├── .github/workflows/               CI (build 3 OS + uji asap) dan Release (biner siap pakai saat tag v*)
-├── dist/                            peluncur dan catatan untuk paket rilis
+├── .github/workflows/               CI (build 3 OS, uji asap, uji coba.sh/coba.ps1) dan Release (paket biner saat tag v*)
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
-├── .claude/settings.json            setelan Claude Code yang dibagikan (tanpa atribusi AI pada commit/PR)
-├── CLAUDE.md                        aturan kerja untuk Claude Code: konvensi, perintah build dan uji asap
-├── install.sh                       pemasang satu perintah untuk macOS/Linux (unduh rilis + verifikasi SHA-256)
-├── install.ps1                      pemasang satu perintah untuk Windows lewat PowerShell (unduh rilis + verifikasi SHA-256)
-├── coba.sh · coba.ps1               coba sekali jalan tanpa memasang: unduh ke folder sementara, jalankan, hapus
+├── coba.sh · coba.ps1               jalankan sekali tanpa memasang: unduh ke folder sementara, jalankan, hapus
 ├── Makefile · jalankan.command · jalankan.bat
 ├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
 └── README.md

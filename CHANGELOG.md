@@ -10,7 +10,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Diubah
 - README: cara pakai utama kini satu perintah sekali jalan tanpa memasang; petunjuk pemasang satu perintah, Homebrew, dan
-  paket zip dihapus dari README (skrip dan paket rilisnya tetap tersedia).
+  paket zip dihapus dari README.
+- Paket rilis kini hanya berisi program, README, dan LICENSE.
+
+### Dihapus
+- `install.sh`, `install.ps1`, peluncur paket zip (`dist/`), dan langkah formula Homebrew di workflow rilis, dikarenakan
+  jalur pakai utama kini `coba.sh`/`coba.ps1` tanpa pemasangan.
+- `CLAUDE.md` dan `.claude/` tidak lagi disertakan di repositori.
 
 ## [1.0.4] - 2026-10-12
 

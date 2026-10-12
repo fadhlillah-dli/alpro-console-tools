@@ -18,5 +18,6 @@ Thumbs.db
 .vscode/settings.json
 .vscode/launch.json
 
-# Setelan lokal Claude Code milik pengguna (yang dibagikan hanya .claude/settings.json)
-.claude/settings.local.json
+# Berkas Claude Code (aturan kerja dan setelan) tidak disertakan di repositori
+CLAUDE.md
+.claude/

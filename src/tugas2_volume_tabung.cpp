@@ -83,7 +83,7 @@ namespace {
     // Berfungsi untuk mengatur konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama, dikarenakan simbol
     // π, ², ³, garis kotak, dan sketsa Braille dikirim sebagai byte UTF-8, sedangkan Command Prompt dan PowerShell bawaan
     // masih memakai code page lama (mis. 437) yang menampilkannya sebagai huruf acak. Pengaturan ini berlaku untuk
-    // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur Jalankan.bat. Di macOS/Linux
+    // jendela konsol yang sedang dipakai, sama seperti perintah chcp 65001 pada peluncur jalankan.bat. Di macOS/Linux
     // terminal sudah UTF-8, sehingga fungsi ini tidak melakukan apa-apa.
     void enableUtf8Console() {
     #ifdef _WIN32

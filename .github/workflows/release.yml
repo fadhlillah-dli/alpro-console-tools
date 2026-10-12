@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           clang++ -std=c++17 -O2 -DBUILD_WITH_MENU -arch arm64 -arch x86_64 -o tugas_alpro src/*.cpp
-          mkdir -p paket && cp tugas_alpro dist/macos/Jalankan.command dist/CATATAN-RILIS.txt README.md LICENSE paket/
+          mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
 
       # Menggunakan -static (tautan statis penuh, termasuk glibc) berfungsi agar paket jalan di distro dengan glibc lebih lama
@@ -50,7 +50,7 @@ jobs:
         run: |
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro src/*.cpp
           file tugas_alpro | grep -q 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
-          mkdir -p paket && cp tugas_alpro dist/linux/jalankan.sh dist/CATATAN-RILIS.txt README.md LICENSE paket/
+          mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           tar -czf "alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.tar.gz" -C paket .
 
       - name: Kompilasi Windows (statis, tanpa ketergantungan DLL MSYS2)
@@ -58,7 +58,7 @@ jobs:
         shell: msys2 {0}
         run: |
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro.exe src/*.cpp
-          mkdir -p paket && cp tugas_alpro.exe dist/windows/Jalankan.bat dist/CATATAN-RILIS.txt README.md LICENSE paket/
+          mkdir -p paket && cp tugas_alpro.exe README.md LICENSE paket/
           cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
 
       - name: Simpan paket sebagai artifact
@@ -90,54 +90,3 @@ jobs:
         with:
           files: paket/*
           generate_release_notes: true
-
-      # Memperbarui formula Homebrew di repositori fadhlillah-dli/homebrew-tap agar `brew install` langsung memakai
-      # versi ini. Butuh secret HOMEBREW_TAP_TOKEN (fine-grained PAT, izin Contents: write pada homebrew-tap);
-      # bila secret belum ada, langkah ini dilewati tanpa menggagalkan rilis. Menggunakan echo "::warning::..." berfungsi
-      # untuk menampilkan secret yang belum ada atau tap yang tidak bisa diakses di ringkasan run, dikarenakan rilis
-      # tetap hijau dan tanpa itu formula yang basi tidak akan terlihat.
-      - name: Peringatan bila secret Homebrew belum ada
-        env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        if: env.TAP_TOKEN == ''
-        run: echo "::warning::Secret HOMEBREW_TAP_TOKEN belum diset; formula Homebrew tidak diperbarui pada rilis ini."
-
-      - name: Perbarui formula Homebrew
-        env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        if: env.TAP_TOKEN != ''
-        # Menggunakan shell: bash berfungsi untuk mengaktifkan pipefail (bash -eo pipefail), dikarenakan tanpa itu unduhan
-        # tarball yang gagal tidak menghentikan langkah: sha256 dihitung dari input kosong dan formula yang salah ikut di-push.
-        shell: bash
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          tarball="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
-          sha="$(curl -fsSL "$tarball" | sha256sum | cut -d' ' -f1)"
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/${GITHUB_REPOSITORY_OWNER}/homebrew-tap.git" tap \
-            || { echo "::warning::Repositori homebrew-tap belum ada atau token tidak berlaku; langkah formula dilewati."; exit 0; }
-          mkdir -p tap/Formula
-          cat > tap/Formula/alpro-console-tools.rb <<EOF
-          class AlproConsoleTools < Formula
-            desc "Program konsol C++17 praktikum Alpro: rekap nilai, volume tabung, luas arsir"
-            homepage "https://github.com/${GITHUB_REPOSITORY}"
-            url "${tarball}"
-            sha256 "${sha}"
-            license "MIT"
-
-            def install
-              system ENV.cxx, "-std=c++17", "-O2", "-DBUILD_WITH_MENU", "-o", "tugas_alpro", *Dir["src/*.cpp"]
-              bin.install "tugas_alpro"
-            end
-
-            test do
-              output = pipe_output("#{bin}/tugas_alpro", "3\n\n2\n14\n\n0\n", 0)
-              assert_match "42.00", output
-            end
-          end
-          EOF
-          cd tap
-          git config user.name "${GITHUB_REPOSITORY_OWNER}"
-          git config user.email "${GITHUB_REPOSITORY_OWNER}@users.noreply.github.com"
-          git add Formula/alpro-console-tools.rb
-          git commit -m "alpro-console-tools ${version}" || echo "formula tidak berubah"
-          git push
