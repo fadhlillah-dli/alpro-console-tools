@@ -17,3 +17,6 @@ Thumbs.db
 # Setelan lokal VS Code milik pengguna (yang dibagikan hanya tasks.json dan c_cpp_properties.json)
 .vscode/settings.json
 .vscode/launch.json
+
+# Setelan lokal Claude Code milik pengguna (yang dibagikan hanya .claude/settings.json)
+.claude/settings.local.json
