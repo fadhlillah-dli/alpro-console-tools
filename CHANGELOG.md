@@ -2,7 +2,7 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.5] - 2026-10-12
 
 ### Ditambahkan
 - `coba.sh` dan `coba.ps1`: menjalankan program sekali jalan tanpa memasang apa pun (unduh ke folder sementara, verifikasi
