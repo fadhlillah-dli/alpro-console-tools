@@ -1,0 +1,19 @@
+# Hasil kompilasi (dibangun ulang dengan `make` atau task VS Code)
+tugas_alpro
+tugas_alpro.exe
+tugas1
+tugas2
+tugas3
+*.exe
+*.o
+*.obj
+*.out
+
+# Berkas sistem operasi dan editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Setelan lokal VS Code milik pengguna (yang dibagikan hanya tasks.json dan c_cpp_properties.json)
+.vscode/settings.json
+.vscode/launch.json

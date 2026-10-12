@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build (g++)",
+            "detail": "Kompilasi program bermenu: main.cpp + tiga berkas tugas (dengan -DBUILD_WITH_MENU)",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++17", "-Wall", "-Wextra", "-DBUILD_WITH_MENU",
+                "-o", "${workspaceFolder}/tugas_alpro",
+                "${workspaceFolder}/src/main.cpp",
+                "${workspaceFolder}/src/tugas1_nilai_mahasiswa.cpp",
+                "${workspaceFolder}/src/tugas2_volume_tabung.cpp",
+                "${workspaceFolder}/src/tugas3_luas_arsir.cpp"
+            ],
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gcc"],
+            "presentation": { "reveal": "always", "panel": "shared" }
+        },
+        {
+            "label": "Build & Run",
+            "detail": "Kompilasi lalu jalankan program bermenu di terminal terintegrasi",
+            "type": "shell",
+            "command": "${workspaceFolder}/tugas_alpro",
+            "dependsOn": "Build (g++)",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+        },
+        {
+            "label": "Build & Run berkas yang sedang dibuka (tugas sendiri)",
+            "detail": "Kompilasi dan jalankan satu berkas tugas yang sedang aktif di editor sebagai program sendiri",
+            "type": "shell",
+            "command": "g++ -std=c++17 -Wall -Wextra -o \"${fileDirname}/${fileBasenameNoExtension}\" \"${file}\" && \"${fileDirname}/${fileBasenameNoExtension}\"",
+            "problemMatcher": ["$gcc"],
+            "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+        }
+    ]
+}

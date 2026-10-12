@@ -1,0 +1,19 @@
+# Konvensi format yang dibaca otomatis oleh VS Code dan editor lain (https://editorconfig.org)
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cpp,hpp}]
+indent_style = space
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+[*.{json,md,yml}]
+indent_style = space
+indent_size = 4

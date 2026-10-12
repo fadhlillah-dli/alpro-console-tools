@@ -1,0 +1,10 @@
+Paket siap pakai alpro-console-tools
+====================================
+Isi: tugas_alpro (program), peluncur (Jalankan.command / Jalankan.bat / jalankan.sh), README.md, LICENSE.
+Program ini berjalan di terminal (console). Tidak ada instalasi; tidak membutuhkan internet.
+
+macOS   : klik dua kali Jalankan.command. Karena program ini tidak ditandatangani Apple, pertama kali macOS
+          menampilkan peringatan: klik kanan Jalankan.command -> Open -> Open (cukup sekali). Jika masih
+          ditolak: buka Terminal di folder ini lalu ketik  xattr -d com.apple.quarantine tugas_alpro
+Windows : klik dua kali Jalankan.bat. Bila SmartScreen muncul: "More info" -> "Run anyway" (sekali saja).
+Linux   : buka terminal di folder ini lalu ketik  sh jalankan.sh
