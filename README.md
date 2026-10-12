@@ -14,7 +14,13 @@ area), with strict input validation, colored boxed UI, and computed Braille sket
 
 ## Demo
 
-> 📺 Video demo akan ditambahkan di sini.
+
+
+https://github.com/user-attachments/assets/cb81f1b3-6605-4465-a380-b10b1024aa75
+
+
+
+
 
 ```text
 ┌─ Menu Program ───────────────────────────────────────────────────────────────────────────────┐
@@ -42,14 +48,15 @@ Pilihan Anda [0-3] : 2
 - **Tiga program dalam satu menu**, masing-masing juga bisa dikompilasi sebagai program mandiri.
 - **Tools Nilai Mahasiswa**: nama mata kuliah dan jumlah mahasiswa bebas, nama lengkap tervalidasi
   (huruf termasuk non-ASCII seperti é/ö atau aksara lain, spasi, `. - '`), nilai 0–100 boleh desimal dengan
-  titik atau koma, rekap total dan rata-rata dengan kolom yang tetap sejajar untuk aksara lebar (CJK, emoji).
-- **Volume Tabung**: pilihan satuan (mm/cm/dm/m), nilai π 3.14 atau 22/7 seperti pada soal sekolah,
-  input jari-jari atau diameter, hasil cm³ plus padanan liter.
-- **Luas Bangun yang Diarsir**: persegi dikurangi lingkaran yang menyinggung keempat sisi; hasil sama
-  dengan kunci soal (sisi 14 cm, π = 22/7 → 42 cm²).
-- **Validasi ketat**: setiap input diperiksa dan diminta ulang dengan pesan yang menyebut tindakan yang benar.
+  titik atau koma, rekap total dan rata-rata dengan kolom yang tetap sejajar untuk aksara lebar.
+- **Volume Tabung**: pilihan satuan (mm/cm/dm/m), nilai π 3.14 atau 22/7, input jari-jari atau diameter,
+  hasil cm³ plus padanan liter.
+- **Luas Bangun yang Diarsir**: persegi dikurangi lingkaran yang menyinggung keempat sisi
+  (sisi 14 cm, π = 22/7 → 42 cm²).
+- **Validasi ketat**: setiap input diperiksa dan diminta ulang ketika tidak sesuai dengan pesan yang
+  menyebut tindakan yang benar.
 - **Tampilan profesional**: kotak berjudul, warna ANSI (otomatis mati bila keluaran bukan terminal atau
-  `NO_COLOR` ada), petunjuk pengisian, dan sketsa bangun dari karakter Braille yang dihitung dari rumus.
+  `NO_COLOR`), petunjuk pengisian, dan sketsa bangun dari karakter Braille yang dihitung dari rumus.
 - **Menyesuaikan lebar terminal** setiap kali layar digambar: teks dibungkus, menu menjadi dua baris, sketsa
   mengecil, keterangan pindah ke bawah gambar bila jendela sempit.
 - **Setiap baris berkomentar** (bahasa Indonesia) menjelaskan apa yang dipakai dan mengapa, cocok untuk belajar.
