@@ -2,7 +2,8 @@
 
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#instalasi)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#unduh-siap-pakai-tanpa-kompilasi)
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
 Program konsol C++ untuk praktikum **Algoritma & Pemrograman (Modul 1: Input dan Output)**: rekap nilai
 mahasiswa, volume tabung, dan luas bangun yang diarsir, dalam satu menu interaktif dengan validasi input
@@ -53,7 +54,22 @@ Pilihan Anda [0-3] : 2
   mengecil, keterangan pindah ke bawah gambar bila jendela sempit.
 - **Setiap baris berkomentar** (bahasa Indonesia) menjelaskan apa yang dipakai dan mengapa, cocok untuk belajar.
 
-## Instalasi
+## Unduh siap pakai (tanpa kompilasi)
+
+Setiap rilis menyertakan program yang sudah dikompilasi di halaman
+[**Releases**](../../releases/latest): `…-macos-universal.zip` (Apple Silicon dan Intel), `…-windows-x86_64.zip`,
+dan `…-linux-x86_64.tar.gz`. Ekstrak, lalu jalankan peluncurnya. Tidak ada instalasi dan tidak butuh internet.
+
+Program tidak ditandatangani Apple/Microsoft, jadi pada pemakaian pertama:
+
+- macOS: klik **kanan** `Jalankan.command` → Open → Open. Jangan klik dua kali `tugas_alpro` secara langsung; macOS
+  akan menolaknya ("Not Opened"). Peluncur melepas tanda karantina dari program lalu menjalankannya di Terminal.
+- Windows: klik dua kali `Jalankan.bat`; bila SmartScreen muncul, "More info" → "Run anyway".
+- Linux: `sh jalankan.sh` dari terminal.
+
+Rincian ada di `CATATAN-RILIS.txt` dalam paket.
+
+## Kompilasi sendiri
 
 Syarat: compiler C++17 (`g++` atau `clang++`).
 
@@ -109,6 +125,8 @@ alpro-console-tools/
 │   ├── tugas1_nilai_mahasiswa.cpp   Program 1 — lengkap, bisa dikompilasi sendiri
 │   ├── tugas2_volume_tabung.cpp     Program 2 — lengkap, bisa dikompilasi sendiri
 │   └── tugas3_luas_arsir.cpp        Program 3 — lengkap, bisa dikompilasi sendiri
+├── .github/workflows/               CI (build 3 OS + uji asap) dan Release (biner siap pakai saat tag v*)
+├── dist/                            peluncur dan catatan untuk paket rilis
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
 ├── Makefile · jalankan.command · jalankan.bat

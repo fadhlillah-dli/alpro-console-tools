@@ -2,6 +2,15 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [1.0.1] - 2026-10-12
+
+### Diperbaiki
+- Build Windows gagal di CI: `NOMINMAX` sudah didefinisikan MinGW, kini dijaga `#ifndef`.
+- Peluncur macOS melepas tanda karantina dari `tugas_alpro` sehingga paket unduhan bisa dijalankan lewat
+  klik kanan → Open tanpa membuka System Settings.
+- Workflow rilis memakai satu job publish agar catatan rilis tidak tergandakan.
+- README: bagian unduh siap pakai dan badge CI.
+
 ## [1.0.0] - 2026-10-12
 
 ### Ditambahkan
