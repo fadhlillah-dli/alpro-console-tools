@@ -1,816 +1,638 @@
-/*
- * Tugas Praktikum 1 — Modul 1: Input dan Output
- * Program 1 : Tools Nilai Mahasiswa
- * Alur : pengguna mengisi Nama Mata Kuliah dan jumlah mahasiswa (bebas, tidak dibatasi 3), lalu nama
- *        lengkap dan nilai tiap mahasiswa; nilai boleh desimal, ditulis 87.5 maupun 87,5. Di akhir,
- *        program menampilkan rekap nilai, nilai total, dan nilai rata-rata. Setiap input diperiksa dulu;
- *        kalau salah, pertanyaannya diulang. Aturannya: nama mahasiswa hanya boleh huruf/spasi/titik/
- *        tanda hubung/tanda petik, nama mata kuliah harus mengandung huruf, jumlah hanya angka 0-9,
- *        nilai hanya angka dengan satu pemisah desimal.
- * Nama : Fadhlillah
- * NIM  : 2531070011
- *
- * Berkas ini lengkap dan bisa dikompilasi sendiri:
- *   g++ -std=c++17 -Wall -Wextra -o tugas1 tugas1_nilai_mahasiswa.cpp && ./tugas1
- *   Artinya: g++ adalah compiler, program yang mengubah kode C++ menjadi program yang bisa dijalankan.
- *   -std=c++17 memakai aturan bahasa C++ versi 2017. -Wall -Wextra menampilkan semua peringatan (warning)
- *   supaya kesalahan kecil kelihatan. -o tugas1 memberi nama program hasilnya. && ./tugas1 menjalankan
- *   program itu bila kompilasinya berhasil.
- * Bila digabung ke program bermenu (main.cpp), tambahkan -DBUILD_WITH_MENU saat kompilasi supaya main()
- * di bagian paling bawah berkas ini tidak ikut (lihat BAGIAN 7).
- *
- * Susunan berkas: BAGIAN 1 pustaka, BAGIAN 2 konstanta dan tipe data, BAGIAN 3 warna dan kotak tampilan,
- * BAGIAN 4 fungsi bantu input, BAGIAN 5 judul/petunjuk/tabel, BAGIAN 6 alur utama task1::run()
- * (cara penulisan itu dijelaskan di BAGIAN 6), BAGIAN 7 main().
- * Komentar di berkas ini ditulis untuk pembaca yang baru belajar: tiap blok dibuka dengan gambaran besarnya
- * (apa yang kita lakukan dan kenapa), istilah baru dijelaskan sekali saat pertama muncul, dan alasan sebuah
- * pilihan kode ditulis di tempat pilihan itu dibuat.
- */
+// ===== tugas1_nilai_mahasiswa.cpp — Program 1 : Tools Nilai Mahasiswa =====
+// Alur program: pengguna mengisi Nama Mata Kuliah dan jumlah mahasiswa (1 sampai 1000, tidak harus 3), lalu nama lengkap dan nilai tiap mahasiswa;
+// nilai boleh desimal, ditulis 87.5 maupun 87,5. Di akhir, program menampilkan rekap nilai, nilai total, dan nilai rata-rata dalam satu kotak.
+// Setiap input diperiksa dulu; kalau salah, pertanyaannya diulang. Aturannya: nama mahasiswa hanya boleh huruf/spasi/titik/tanda hubung/tanda petik,
+// nama mata kuliah harus mengandung huruf, jumlah hanya angka 0-9 (1-1000), nilai 0-100 dengan paling banyak satu pemisah desimal.
+//
+// Nama : Fadhlillah
+// NIM  : 2531070011
+//
+// Cara mengompilasi berkas ini sendiri (jalankan dari folder proyek):
+// 1. Buka Terminal VS Code lalu copy paste command di bawah ini :
+//   g++ -std=c++17 -Wall -Wextra -o tugas1 src/tugas1_nilai_mahasiswa.cpp && ./tugas1
+//   (Windows PowerShell: .\tugas1.exe).
+// Arti tiap bagian perintah itu:
+//   g++                             compiler, yaitu program yang mengubah kode C++ menjadi program yang bisa dijalankan
+//   -std=c++17                      memakai aturan bahasa C++17
+//   -Wall -Wextra                   menampilkan peringatan tambahan supaya kesalahan kecil kelihatan
+//   -o tugas1                       nama program hasil kompilasi
+//   src/tugas1_nilai_mahasiswa.cpp  berkas yang dikompilasi, yaitu berkas ini
+//   && ./tugas1                     menjalankan program hasilnya, tetapi hanya bila kompilasi berhasil
+// Bila digabung ke program bermenu (main.cpp di folder src yang sama), kompilasinya memakai -DBUILD_WITH_MENU. Opsi -D berfungsi untuk memasang
+// penanda bernama BUILD_WITH_MENU saat kompilasi. Bila penanda itu ada, main() di bagian paling bawah berkas ini (BAGIAN 7) tidak ikut dikompilasi,
+// jadi yang dipakai hanya main() milik main.cpp.
+//
+// 2. Cara lain di VS Code : buka berkas ini di editor, lalu menu Terminal > Run Task..., pilih task "Build & Run berkas yang sedang dibuka (tugas sendiri)".
+// Task adalah perintah siap pakai; yang satu ini menjalankan perintah g++ yang sama seperti di atas, hanya saja nama program hasilnya mengikuti nama berkas
+// (src/tugas1_nilai_mahasiswa). Daftar task ada di berkas .vscode/tasks.json.
+//
+// Susunan berkas: BAGIAN 1 pustaka, BAGIAN 2 konstanta dan tipe data, BAGIAN 3 warna dan kotak tampilan, BAGIAN 4 fungsi bantu input,
+// BAGIAN 5 judul/petunjuk/tabel, BAGIAN 6 alur utama task1::run(), BAGIAN 7 main().
+
 
 // ===== BAGIAN 1: PUSTAKA (LIBRARY) YANG DIPAKAI =====
-// Program ini tidak menulis semuanya dari nol. Untuk mencetak ke layar, menyimpan teks, atau mengatur lebar
-// kolom, kita meminjam dari pustaka standar C++. Caranya lewat #include: perintah preprocessor (tahap yang
-// berjalan sebelum kompilasi) yang menyalin isi sebuah header ke berkas ini. Header adalah berkas berisi
-// daftar fungsi dan tipe yang disediakan sebuah pustaka. Nama di antara < > berarti pustaka standar C++.
-// Nama dari pustaka standar diawali std::, misalnya std::max; dibaca "max milik std". std adalah namespace
-// (wadah nama) dan tanda :: dibaca "milik". Namespace dijelaskan lebih lengkap tepat sebelum BAGIAN 2.
-// Tiap #include di bawah diberi catatan: apa yang kita pakai darinya, dan di mana.
+// Program ini tidak menulis semuanya dari nol: untuk mencetak ke layar, menyimpan teks, atau mengatur lebar kolom, kita meminjam dari pustaka standar C++.
+// Nama dari pustaka standar diawali std::, misalnya std::max; dibaca "max milik std". std adalah namespace (wadah nama) dan tanda :: dibaca "milik".
+// #include berfungsi untuk menyalin isi sebuah header ke berkas ini sebelum dikompilasi; header adalah berkas berisi daftar fungsi dan tipe yang disediakan sebuah pustaka.
+#include <algorithm> // <algorithm> digunakan untuk std::max dan std::min, yang mengambil yang terbesar/terkecil dari dua nilai; dipakai saat menghitung lebar kolom nama dan lebar kotak (BAGIAN 3 dan 6).
+#include <cctype> // <cctype> digunakan untuk std::isalpha dan std::isdigit, yang memeriksa apakah satu karakter itu huruf atau angka; dipakai oleh fungsi-fungsi pemeriksa input di BAGIAN 4.
+#include <cstddef> // <cstddef> digunakan untuk std::size_t, yaitu bilangan bulat tak bertanda (tidak bisa negatif, mulai dari 0) untuk ukuran dan indeks; panjang std::string dan jumlah elemen std::vector bertipe ini.
+#include <cstdlib> // <cstdlib> digunakan untuk std::exit (menghentikan program), EXIT_FAILURE (kode "gagal"), std::getenv (membaca variabel lingkungan seperti NO_COLOR atau COLUMNS),
+// dan std::atoi (mengubah teks menjadi int); semuanya dipakai di BAGIAN 3 dan 4.
+#include <iomanip> // <iomanip> digunakan untuk std::setw (lebar kolom) dan std::setprecision (jumlah angka desimal); pasangannya std::left, std::right, dan std::fixed sudah tersedia lewat <iostream>. Semuanya dipakai tabel rekap di BAGIAN 5.
+#include <iostream> // <iostream> digunakan untuk std::cin (masukan keyboard), std::cout (keluaran layar), dan std::cerr (keluaran pesan kesalahan); program ini berbicara dengan pengguna lewat terminal.
+#include <sstream> // <sstream> digunakan untuk std::istringstream (membaca angka dari teks) dan std::ostringstream (menyusun teks dari angka); input dibaca sebagai teks dulu baru diubah ke angka (BAGIAN 4).
+#include <string> // <string> digunakan untuk tipe std::string, yaitu teks yang panjangnya bisa berubah, dan fungsi std::getline untuk membaca satu baris ketikan utuh; nama mata kuliah dan nama mahasiswa adalah teks.
+#include <string_view> // <string_view> digunakan untuk tipe std::string_view, yaitu "jendela" untuk membaca sebuah teks tanpa menyalinnya;
+// dipakai karena menyalin teks yang hanya dibaca (prompt, judul kotak, isi kolom tabel) cuma membuang waktu dan memori.
+#include <vector> // <vector> digunakan untuk tipe std::vector, yaitu daftar berurutan yang bisa bertambah panjang; jumlah mahasiswa baru diketahui setelah pengguna mengetiknya, jadi array berukuran tetap tidak cocok.
 
-// std::max dan std::min mengambil yang terbesar/terkecil dari dua nilai. Dipakai saat menghitung lebar
-// kolom nama dan lebar kotak (BAGIAN 3 dan 6).
-#include <algorithm>
-// std::isalpha dan std::isdigit memeriksa apakah satu karakter itu huruf atau angka. Dipakai oleh
-// fungsi-fungsi pemeriksa input di BAGIAN 4.
-#include <cctype>
-// std::size_t adalah bilangan bulat tak bertanda (tidak bisa negatif, mulai dari 0) untuk ukuran dan indeks.
-// Panjang std::string dan jumlah elemen std::vector bertipe ini, jadi kita ikut memakainya.
-#include <cstddef>
-// std::exit menghentikan program saat itu juga. Setiap program yang selesai melapor satu angka ke sistem
-// operasi: 0 berarti berhasil, EXIT_FAILURE berarti gagal. std::getenv membaca variabel lingkungan, yaitu
-// pengaturan berbentuk NAMA=nilai yang diwariskan sistem operasi ke program (misalnya NO_COLOR atau COLUMNS).
-// std::atoi mengubah teks menjadi int. Semuanya dipakai di BAGIAN 3 dan 4.
-#include <cstdlib>
-// Pengatur format keluaran: std::setw (lebar kolom), std::left dan std::right (rata kiri/kanan), std::fixed
-// dan std::setprecision (jumlah angka desimal). Tabel rekap di BAGIAN 5 memerlukannya.
-#include <iomanip>
-// std::cin (masukan keyboard), std::cout (keluaran layar), dan std::cerr (keluaran pesan kesalahan).
-// Program ini berbicara dengan pengguna lewat terminal, jadi ketiganya kita butuhkan.
-#include <iostream>
-// std::istringstream membaca angka dari teks, std::ostringstream menyusun teks dari angka. Input dibaca
-// sebagai teks dulu baru diubah ke angka (BAGIAN 4), dan angka disusun menjadi teks tabel (BAGIAN 5).
-#include <sstream>
-// std::string adalah tipe teks yang panjangnya bisa berubah. Nama Mata Kuliah dan nama mahasiswa adalah teks.
-#include <string>
-// std::string_view adalah "pandangan" ke teks yang sudah ada: hanya dibaca, tanpa disalin. Parameter teks
-// seperti prompt (teks pertanyaan ke pengguna), judul kotak, dan isi kolom tabel di BAGIAN 3 sampai 5 cukup
-// dibaca, jadi tidak perlu disalin.
-#include <string_view>
-// std::vector adalah daftar (array) yang ukurannya bisa ditentukan saat program berjalan. Jumlah mahasiswa
-// baru diketahui setelah pengguna mengetiknya, jadi array berukuran tetap tidak cocok.
-#include <vector>
-// Program ini harus jalan di Windows maupun macOS/Linux, padahal cara keduanya "berbicara" dengan terminal
-// berbeda: mendeteksi terminal, membaca lebar jendela, mengaktifkan warna, dan mengatur UTF-8 (dijelaskan di
-// BAGIAN 3). Jadi di sini kita bertanya ke compiler: "ini sedang dikompilasi untuk Windows atau bukan?"
-// Itulah arti #ifdef _WIN32 (if defined: apakah nama _WIN32 ada? di Windows nama itu otomatis ada).
-// _WIN32 adalah makro: nama pengganti teks untuk compiler, seperti catatan tempel. Baris sampai #else hanya
-// ikut dikompilasi di Windows, baris setelah #else hanya di macOS/Linux.
-#ifdef _WIN32
-    // Sebelum memanggil windows.h, kita pastikan dulu makro NOMINMAX sudah ada. NOMINMAX artinya "jangan
-    // buat min dan max", karena windows.h punya kebiasaan membuat makro min/max sendiri yang merusak
-    // std::min dan std::max kita. #ifndef = "if not defined": blok ini hanya jalan bila NOMINMAX belum ada,
-    // dikarenakan MinGW (g++ untuk Windows) sudah mendefinisikannya lebih dulu, dan mendefinisikan ulang
-    // nama yang sama menghasilkan peringatan.
-    #ifndef NOMINMAX
-    #define NOMINMAX 1  // bentuknya: #define NAMA NILAI; mulai baris ini NOMINMAX berarti 1
-    #endif  // selesai mengecek NOMINMAX
-    // windows.h adalah pustaka resmi Windows. Dari sini kita memakai fungsi untuk warna, UTF-8, dan lebar
-    // jendela; semuanya dipanggil di fungsi-fungsi BAGIAN 3.
-    #include <windows.h>
-#else  // bukan Windows, berarti macOS atau Linux
-    #include <cstdio>  // untuk stdout (saluran keluaran ke layar) dan fileno (nomor saluran itu)
-    #include <sys/ioctl.h>  // untuk ioctl dan TIOCGWINSZ: bertanya ke terminal seberapa lebar jendelanya
-    #include <unistd.h>  // untuk isatty (keluaran ini terminal?) dan STDOUT_FILENO (nomor saluran layar)
-#endif  // selesai memilih pustaka sesuai sistem operasi
 
-// Sebelum masuk ke isi, satu hal tentang nama. namespace adalah wadah yang mengelompokkan nama (fungsi,
-// konstanta) supaya tidak bentrok dengan nama yang sama di tempat lain. Di sini kita memakai namespace tanpa
-// nama (anonymous namespace: kata kunci namespace langsung diikuti { tanpa nama). Semua konstanta dan fungsi
-// bantu di dalamnya menjadi milik berkas ini saja, tidak terlihat dari berkas lain. Kenapa perlu? Dikarenakan
-// tugas2_volume_tabung.cpp dan tugas3_luas_arsir.cpp di folder src yang sama juga punya fungsi bantu bernama
-// sama, misalnya colorize() dan drawBox(). Tanpa ini, penggabungan ke program bermenu main.cpp gagal dengan
-// error "multiple definition" (satu nama didefinisikan lebih dari sekali). Blok ini berisi BAGIAN 2 sampai
-// BAGIAN 5 dan ditutup tepat sebelum BAGIAN 6.
-namespace {
+// #ifdef berfungsi untuk bertanya ke compiler apakah sebuah nama sudah didefinisikan; bila ya, baris sampai #else/#endif ikut dikompilasi, bila tidak, baris itu dilewati.
+// Di sini kita perlu bertanya karena program ini harus jalan di Windows maupun macOS/Linux, padahal cara keduanya berbicara dengan terminal berbeda.
+#ifdef _WIN32 // _WIN32 adalah nama yang otomatis ada saat program dikompilasi untuk Windows; artinya baris sampai #else hanya ikut dikompilasi di Windows.
+    // #ifndef ("if not defined") berfungsi kebalikan dari #ifdef: baris sampai #endif hanya ikut dikompilasi bila nama itu BELUM didefinisikan.
+    #ifndef NOMINMAX // NOMINMAX dicek dulu karena MinGW (g++ untuk Windows) sudah mendefinisikannya lebih dulu, dan mendefinisikan ulang nama yang sama menghasilkan peringatan.
+    // #define berfungsi untuk membuat makro, yaitu nama yang oleh compiler diganti dengan teks lain; mulai baris di bawah, NOMINMAX berarti 1.
+    #define NOMINMAX 1 // NOMINMAX 1 artinya "jangan buat min dan max" dinyalakan, karena windows.h punya kebiasaan membuat makro min/max sendiri yang merusak std::min dan std::max.
+    #endif // selesai mengecek NOMINMAX
+    #include <windows.h> // <windows.h> adalah pustaka resmi Windows; dari sini dipakai fungsi untuk warna (mode virtual terminal), UTF-8 (code page), dan lebar jendela konsol (BAGIAN 3).
+#else // #else artinya: bila bukan Windows (macOS atau Linux), pakai pustaka di bawah ini.
+    #include <cstdio> // <cstdio> digunakan untuk stdout, yaitu "saluran" keluaran ke layar, dan fileno, yang memberi nomor saluran itu.
+    #include <sys/ioctl.h> // <sys/ioctl.h> digunakan untuk ioctl dan TIOCGWINSZ, yaitu cara bertanya ke terminal seberapa lebar jendelanya.
+    #include <unistd.h> // <unistd.h> digunakan untuk isatty (memeriksa apakah keluaran benar-benar terminal, bukan berkas) dan STDOUT_FILENO (nomor saluran keluaran layar).
+#endif // #endif berfungsi untuk menutup blok #ifdef/#ifndef; di sini artinya selesai memilih pustaka sesuai sistem operasi.
+
+// namespace berfungsi untuk membuat wadah nama, supaya nama fungsi dan konstanta tidak bentrok dengan nama yang sama di tempat lain.
+namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terlihat dari berkas ini, karena tugas2_volume_tabung.cpp dan tugas3_luas_arsir.cpp di folder src yang sama
+// juga punya fungsi bantu bernama sama, misalnya colorize() dan drawBox(); tanpa ini, penggabungan ke program bermenu main.cpp gagal dengan error "multiple definition"
+// (satu nama didefinisikan lebih dari sekali). Wadah ini berisi BAGIAN 2 sampai BAGIAN 5 dan ditutup tepat sebelum BAGIAN 6.
 
     // ===== BAGIAN 2: KONSTANTA DAN TIPE DATA =====
-    // Angka-angka yang menjadi aturan program (batas jumlah, batas nilai, lebar kolom) kita kumpulkan di sini
-    // supaya mudah dicari dan diubah di satu tempat. Semuanya constexpr: kata kunci untuk nilai tetap
-    // (konstanta) yang sudah pasti sejak kompilasi dan tidak bisa diubah saat program berjalan. Nama
-    // konstanta ditulis HURUF_BESAR, itu kebiasaan umum.
+    // Angka-angka yang menjadi aturan program (batas jumlah, batas nilai, lebar kolom) dikumpulkan di sini supaya mudah dicari dan diubah di satu tempat.
+    // constexpr berfungsi untuk membuat konstanta, yaitu nilai tetap yang sudah pasti sejak kompilasi dan tidak bisa diubah saat program berjalan; namanya ditulis HURUF_BESAR, itu kebiasaan umum.
+    // int adalah tipe bilangan bulat biasa (4 byte) yang boleh bernilai negatif; dipakai untuk jumlah mahasiswa karena jumlah orang selalu bulat.
+    constexpr int STUDENT_COUNT_MIN = 1;     // STUDENT_COUNT_MIN = 1 adalah batas bawah jumlah mahasiswa; rekap tanpa mahasiswa tidak bermakna, jadi minimal 1. Dipakai saat memanggil readInteger() di BAGIAN 6.
+    constexpr int STUDENT_COUNT_MAX = 1000;  // STUDENT_COUNT_MAX = 1000 adalah batas atas jumlah mahasiswa; batas 1000 berfungsi untuk menolak salah ketik seperti 30000.
 
-    // Batas jumlah mahasiswa. Tipenya int (bilangan bulat, 4 byte), dikarenakan jumlah orang selalu bulat.
-    // Keduanya dipakai saat memanggil readInteger() di BAGIAN 6.
-    constexpr int STUDENT_COUNT_MIN = 1;     // rekap tanpa mahasiswa tidak bermakna, jadi minimal 1
-    constexpr int STUDENT_COUNT_MAX = 1000;  // batas atas 1000 menolak salah ketik seperti 30000
+    // double adalah tipe bilangan desimal (8 byte, presisi sekitar 15 digit); dipakai untuk nilai karena nilai bisa desimal seperti 87.5, sedangkan pada int 87.5 terpotong menjadi 87.
+    constexpr double SCORE_MIN = 0.0;    // SCORE_MIN = 0.0 adalah batas bawah nilai, karena nilai tidak mungkin negatif. Dipakai saat memanggil readDecimal() di BAGIAN 6.
+    constexpr double SCORE_MAX = 100.0;  // SCORE_MAX = 100.0 adalah batas atas nilai, karena skala nilai mata kuliah 0-100.
 
-    // Batas nilai. Tipenya double (bilangan desimal, 8 byte, presisi sekitar 15 digit), dikarenakan nilai
-    // bisa desimal seperti 87.5; pada int, 87.5 terpotong menjadi 87. Dipakai saat memanggil readDecimal()
-    // di BAGIAN 6.
-    constexpr double SCORE_MIN = 0.0;    // nilai tidak mungkin negatif
-    constexpr double SCORE_MAX = 100.0;  // skala nilai mata kuliah 0-100
+    // Enam konstanta di bawah adalah lebar kolom tabel, lebar garis judul, dan batas panjang teks, semuanya dalam satuan karakter.
+    // Lebar yang diberikan ke std::setw (BAGIAN 5) bertipe int; TITLE_WIDTH juga int, karena ia hanya menjadi panjang garis dan tidak dibandingkan dengan apa pun.
+    // Lebar yang dibandingkan dengan hasil displayWidth() (BAGIAN 3) bertipe std::size_t,
+    // dikarenakan membandingkan bilangan bertanda (int) dengan tak bertanda (std::size_t) memunculkan peringatan compiler.
+    constexpr int         NO_COLUMN_WIDTH    = 5;   // NO_COLUMN_WIDTH    = 5 adalah lebar kolom nomor urut ("No"); int karena diberikan ke std::setw di formatTableRow() (BAGIAN 5).
+    // std::size_t adalah tipe bilangan bulat tanpa tanda negatif yang dipakai C++ untuk ukuran dan panjang (berasal dari <cstddef>).
+    constexpr std::size_t NAME_COLUMN_MIN_WIDTH    = 20;  // NAME_COLUMN_MIN_WIDTH    = 20 adalah lebar minimal kolom nama; std::size_t karena dibandingkan dengan hasil displayWidth() di run() (BAGIAN 6).
+    constexpr int         SCORE_COLUMN_WIDTH = 8;   // SCORE_COLUMN_WIDTH = 8 adalah lebar kolom nilai ("Nilai"); int karena diberikan ke std::setw.
+    constexpr int         TITLE_WIDTH       = 60;  // TITLE_WIDTH       = 60 adalah jumlah karakter '=' pada garis judul; dipakai sebagai panjang garis di std::string(TITLE_WIDTH, ch) di printRule() (BAGIAN 3).
+    constexpr std::size_t NAME_MAX_LENGTH = 60;  // NAME_MAX_LENGTH = 60 adalah batas panjang nama mahasiswa; lebih panjang dari ini hampir pasti tempelan teks, bukan nama. Dipakai isValidPersonName() di BAGIAN 4.
+    constexpr std::size_t COURSE_NAME_MAX_LENGTH = 60;  // COURSE_NAME_MAX_LENGTH = 60 adalah batas panjang nama mata kuliah, alasan yang sama. Dipakai isValidCourseName() di BAGIAN 4.
 
-    // Lebar kolom tabel, lebar garis judul, dan batas panjang teks, semuanya dalam satuan karakter.
-    // Kenapa tipenya ada dua? Tiap konstanta mengikuti tipe pasangan yang akan dihitung bersamanya.
-    // NO_COLUMN_WIDTH dan SCORE_COLUMN_WIDTH diberikan ke std::setw, yang meminta int. TITLE_WIDTH ikut int;
-    // std::string(TITLE_WIDTH, ch) di printRule() (BAGIAN 3) mengubahnya otomatis tanpa peringatan.
-    // Tiga sisanya dibandingkan dengan hasil displayWidth() (BAGIAN 3), yang bertipe std::size_t.
-    // Membandingkan int dengan size_t (bertanda dengan tak bertanda) memunculkan peringatan compiler,
-    // jadi ketiganya memakai std::size_t.
-    constexpr int         NO_COLUMN_WIDTH    = 5;   // lebar kolom nomor urut ("No")
-    constexpr std::size_t NAME_COLUMN_MIN_WIDTH    = 20;  // lebar minimal kolom nama
-    constexpr int         SCORE_COLUMN_WIDTH = 8;   // lebar kolom nilai ("Nilai")
-    constexpr int         TITLE_WIDTH       = 60;  // jumlah karakter '=' pada garis judul
-    constexpr std::size_t NAME_MAX_LENGTH = 60;  // lebih panjang dari ini hampir pasti tempelan teks, bukan nama
-    constexpr std::size_t COURSE_NAME_MAX_LENGTH = 60;  // batas nama mata kuliah, alasan yang sama
-
-    // Satu mahasiswa punya dua data: nama dan nilai. Daripada disimpan di dua daftar terpisah yang bisa
-    // tertukar, kita bungkus jadi satu dengan struct: tipe data buatan sendiri yang menggabungkan beberapa
-    // variabel (anggota) menjadi satu kesatuan. Anggotanya diakses dengan tanda titik, misalnya student.name
-    // (lihat fungsi run() di BAGIAN 6).
-    struct Student {
-        std::string name;     // huruf dan spasi, panjangnya tidak pasti, jadi std::string
-        double      score{};  // boleh desimal, jadi double; {} memberi nilai awal 0
-    };  // akhir struct Student
+    // struct berfungsi untuk membuat tipe data sendiri yang menggabungkan beberapa variabel (anggota) menjadi satu kesatuan; anggotanya diakses dengan tanda titik, misalnya student.name.
+    struct Student { // struct Student { adalah wadah data satu mahasiswa: nama dan nilai dibungkus jadi satu supaya tidak tertukar seperti bila disimpan di dua daftar terpisah. Dipakai run() di BAGIAN 6.
+        // std::string adalah tipe teks milik pustaka standar yang panjangnya bisa berubah.
+        std::string name;     // std::string name; adalah nama mahasiswa: huruf dan spasi yang panjangnya tidak pasti, jadi std::string.
+        double      score{};  // double      score{}; adalah nilai mahasiswa: boleh desimal, jadi double; tanda {} berfungsi memberi nilai awal 0 supaya tidak berisi angka acak.
+    };  // }; akhir struct Student; tanda ; wajib setelah kurung penutup struct.
 
     // ===== BAGIAN 3: WARNA DAN KOTAK TAMPILAN =====
-    // Supaya judul, hasil akhir, dan pesan kesalahan gampang dibedakan, program memakai warna lewat kode
-    // ANSI. Terminal macOS, Linux, VS Code, dan Windows Terminal memahaminya. Kode ANSI adalah urutan
-    // karakter khusus yang tidak dicetak; terminal memakainya untuk mengubah tampilan teks berikutnya.
-    // Bentuknya: ESC, lalu "[", angka, dan "m". ESC adalah karakter nomor 27. Di kode ia ditulis "\033",
-    // karena 033 dalam basis 8 (oktal) sama dengan 27.
-    // Tipe konstantanya constexpr const char*. char* adalah pointer (penunjuk): variabel yang menyimpan
-    // alamat memori, di sini alamat huruf pertama teks. constexpr membuat alamatnya tetap, const membuat
-    // teksnya tetap.
-    constexpr const char* ANSI_RESET  = "\033[0m";     // kode 0: kembali ke tampilan normal
-    constexpr const char* ANSI_BOLD  = "\033[1m";     // kode 1: tebal, untuk prompt dan label penting
-    constexpr const char* ANSI_TITLE  = "\033[1;36m";  // kode 1;36: cyan tebal, untuk judul program dan kotak
-    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // kode 1;32: hijau tebal, untuk total dan rata-rata
-    constexpr const char* ANSI_ERROR  = "\033[1;31m";  // kode 1;31: merah tebal, untuk pesan kesalahan
-    constexpr const char* ANSI_DIM    = "\033[90m";    // kode 90: abu-abu, untuk garis kotak dan pembatas
+    // Supaya judul, hasil akhir, dan pesan kesalahan gampang dibedakan, program memakai warna lewat kode ANSI, yaitu teks khusus yang tidak tercetak;
+    // terminal membacanya sebagai perintah ganti gaya. Bentuknya "\033[" + angka gaya + huruf m. "\033" adalah karakter ESC (nomor 27, ditulis dalam oktal: 3 x 8 + 3 = 27).
+    // Kode ANSI dipakai karena terminal macOS, Linux, VS Code, dan Windows Terminal memahaminya.
+    // const char* adalah penunjuk (alamat di memori) ke teks tetap yang hurufnya tidak boleh diubah; const berarti "tidak boleh diubah", dan * menandai penunjuk.
+    constexpr const char* ANSI_RESET  = "\033[0m";     // ANSI_RESET  = "\033[0m"; kode untuk mengembalikan tampilan ke normal (tanpa warna/tebal); angka 0 artinya reset.
+    constexpr const char* ANSI_BOLD  = "\033[1m";     // ANSI_BOLD  = "\033[1m"; angka 1 artinya tebal; dipakai untuk prompt (teks pertanyaan yang menunggu ketikan pengguna), label "Mahasiswa ke-N dari M", judul kolom tabel, dan baris identitas di main() (BAGIAN 7).
+    constexpr const char* ANSI_TITLE  = "\033[1;36m";  // ANSI_TITLE  = "\033[1;36m"; 1;36 artinya tebal (1) sekaligus cyan (36); dipakai untuk judul program, judul kotak, dan sub-judul "Input Nilai ..." di run() (BAGIAN 6).
+    constexpr const char* ANSI_SUCCESS  = "\033[1;32m";  // ANSI_SUCCESS  = "\033[1;32m"; 1;32 artinya tebal dan hijau (32); dipakai untuk baris nilai total dan rata-rata.
+    constexpr const char* ANSI_ERROR  = "\033[1;31m";  // ANSI_ERROR  = "\033[1;31m"; 1;31 artinya tebal dan merah (31); dipakai untuk pesan kesalahan.
+    constexpr const char* ANSI_DIM    = "\033[90m";    // ANSI_DIM    = "\033[90m"; 90 artinya abu-abu (hitam terang); dipakai untuk garis kotak dan garis pembatas agar tidak mencolok.
 
-    // Huruf seperti é, ö, dan garis kotak dikirim ke layar sebagai byte UTF-8. UTF-8 adalah aturan menyimpan
-    // huruf sebagai byte. Huruf ASCII, yaitu 128 karakter dasar (huruf Inggris, angka, tanda baca), memakai
-    // 1 byte. Huruf lain, yang kita sebut non-ASCII, memakai 2-4 byte.
-    // Masalahnya, Command Prompt dan PowerShell bawaan Windows masih memakai code page lama (misalnya 437).
-    // Code page adalah tabel yang dipakai konsol untuk mengubah byte menjadi huruf. Dengan tabel lama,
-    // huruf non-ASCII tampil acak.
-    // Jadi fungsi ini mengganti code page jendela konsol yang sedang dipakai ke UTF-8 (nomor 65001) sebelum
-    // keluaran pertama. Hasilnya sama dengan perintah chcp 65001 di jalankan.bat (folder utama proyek).
-    // Di macOS/Linux terminal sudah UTF-8, jadi fungsi ini tidak melakukan apa-apa.
-    // void berarti fungsi tidak mengembalikan nilai; () kosong berarti tanpa parameter.
-    // Dipanggil di awal fungsi run(), BAGIAN 6.
-    void enableUtf8Console() {
-    // Dua baris di bawah hanya ikut dikompilasi di Windows (arti #ifdef ada di BAGIAN 1).
-    #ifdef _WIN32
-        // CP_UTF8 adalah konstanta dari windows.h bernilai 65001.
-        SetConsoleOutputCP(CP_UTF8);  // keluaran konsol diatur ke UTF-8
-        SetConsoleCP(CP_UTF8);        // masukan (ketikan huruf non-ASCII) juga UTF-8
-    #endif  // selesai bagian khusus Windows
-    }
+    // void berfungsi menandai fungsi yang tidak mengembalikan nilai apa pun; fungsi seperti ini dipanggil untuk efeknya saja. Isi fungsi ditulis di antara { dan }.
+    void enableUtf8Console() { // enableUtf8Console() berfungsi untuk mengganti konsol Windows ke UTF-8 (code page 65001) sebelum keluaran pertama; dipanggil di awal run() (BAGIAN 6).
+    // UTF-8 adalah aturan menyimpan setiap huruf dan simbol sebagai 1 sampai 4 byte. Konsol Windows bawaan (Command Prompt, PowerShell) masih memakai code page lama,
+    // misalnya 437 (code page adalah tabel aturan byte mana menjadi huruf apa), sehingga huruf seperti é, ö, dan garis kotak dari drawBox() di bawah tampil sebagai huruf acak.
+    // Pengaturan ini sama dengan perintah chcp 65001 di berkas peluncur jalankan.bat. Di macOS/Linux terminal sudah UTF-8, jadi di sana isi fungsi ini kosong.
+    #ifdef _WIN32 // _WIN32: dua baris di bawah hanya ikut dikompilasi di Windows, karena SetConsoleOutputCP dan SetConsoleCP hanya ada di windows.h.
+        SetConsoleOutputCP(CP_UTF8);  // SetConsoleOutputCP(CP_UTF8) berfungsi untuk mengatur keluaran konsol ke UTF-8, agar byte UTF-8 tampil sebagai karakter yang benar; CP_UTF8 adalah konstanta Windows bernilai 65001.
+        SetConsoleCP(CP_UTF8);        // SetConsoleCP(CP_UTF8) berfungsi untuk mengatur masukan (ketikan) konsol ke UTF-8 juga, agar huruf non-ASCII seperti é atau ö terbaca sama dengan keluarannya.
+        // ASCII adalah kumpulan 128 karakter dasar: A-Z dan a-z tanpa aksen, angka 0-9, tanda baca, spasi, dan karakter kendali seperti pindah baris.
+    #endif // akhir bagian khusus Windows
+    } // akhir fungsi enableUtf8Console()
 
-    // Boleh pakai warna atau tidak? Aturannya mengikuti kebiasaan program terminal: kalau pengguna menyetel
-    // NO_COLOR, warna mati; kalau FORCE_COLOR, warna dipaksa hidup; selain itu warna hanya dipakai bila
-    // keluaran benar-benar terminal, bukan berkas. Hasilnya bool: true berarti boleh berwarna.
-    // Dipakai oleh colorize() di bawah.
-    bool colorsEnabled() {
-        // Pemeriksaannya cukup sekali seumur program, jadi hasilnya disimpan di variabel static (dibuat
-        // sekali, diingat terus); const berarti tidak boleh diubah setelahnya. Nilai awalnya dihitung oleh
-        // lambda, yaitu fungsi kecil tanpa nama berbentuk []() { ... }, yang langsung dijalankan oleh
-        // tanda () di baris "}();" paling bawah.
-        static const bool enabled = []() {
-            // getenv membaca variabel lingkungan. Hasil nullptr (penunjuk kosong) berarti variabel itu tidak
-            // ada; != berarti "tidak sama dengan". return di dalam lambda hanya keluar dari lambda: nilainya
-            // menjadi isi enabled, bukan langsung keluar dari colorsEnabled().
-            if (std::getenv("NO_COLOR") != nullptr) return false;  // pengguna minta tanpa warna
-            if (std::getenv("FORCE_COLOR") != nullptr) return true;  // pengguna memaksa warna
-        // Cara Windows sampai #else, cara macOS/Linux setelah #else.
-        #ifdef _WIN32
-            // Di Windows, Command Prompt baru mengerti kode ANSI setelah mode "virtual terminal" dinyalakan.
-            // Mode konsol adalah angka yang tiap bitnya menyalakan satu fitur; bit seperti itu disebut bendera.
-            // Caranya: ambil pegangan (HANDLE) ke layar, baca mode konsol yang sedang aktif, lalu tulis
-            // kembali mode itu dengan tambahan satu bendera.
-            HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
-            DWORD  mode     = 0;  // DWORD = bilangan bulat 32-bit milik Windows, tempat mode konsol disimpan
-            // Kalau pegangannya tidak sah, atau keluaran ternyata bukan konsol (misalnya dialihkan ke
-            // berkas), menyerah saja: tanpa warna. || adalah OR (cukup salah satu benar), ! adalah NOT
-            // (membalik true/false). &mode = alamat variabel mode, supaya GetConsoleMode bisa menulis ke sana.
-            if (output == INVALID_HANDLE_VALUE || !GetConsoleMode(output, &mode)) return false;
-            // Tanda | (OR per bit) menyalakan bit ENABLE_VIRTUAL_TERMINAL_PROCESSING tanpa mematikan bit lain.
-            // SetConsoleMode mengembalikan 0 bila gagal, jadi "!= 0" artinya berhasil.
-            return SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
-        #else  // bukan Windows: macOS atau Linux
-            // Di macOS/Linux cukup satu pertanyaan: apakah stdout sebuah terminal (tty)? isatty menjawab
-            // bukan 0 bila ya, dan 0 bila keluaran dialihkan ke berkas atau diteruskan ke program lain (pipa).
-            return isatty(fileno(stdout)) != 0;
-        #endif  // selesai memilih cara deteksi sesuai sistem operasi
-        }();  // tanda () ini menjalankan lambda sekali; hasilnya jadi isi variabel enabled
-        return enabled;  // pemanggilan berikutnya tinggal memakai hasil yang tersimpan
+    // bool adalah tipe data yang hanya punya dua nilai: true (benar) atau false (salah).
+    bool colorsEnabled() { // colorsEnabled() berfungsi untuk menentukan boleh memakai warna atau tidak; hasil true berarti boleh berwarna. Dipakai oleh colorize() di bawah.
+    // Aturannya mengikuti kebiasaan program terminal: bila pengguna menyetel NO_COLOR, warna mati; bila FORCE_COLOR, warna dipaksa hidup; selain itu warna hanya dipakai
+    // bila keluaran benar-benar terminal, bukan berkas. Di Windows, fungsi ini sekaligus menyalakan mode "virtual terminal" agar Command Prompt memahami kode ANSI.
+        // static berfungsi untuk membuat variabel yang dibuat sekali saja (saat fungsi pertama kali dipanggil) lalu nilainya diingat sampai program selesai; jadi pemeriksaan di bawah cukup sekali.
+        // lambda []() { ... } adalah fungsi kecil tanpa nama yang ditulis langsung di tempat; di sini ia menghitung nilai awal enabled, karena pemeriksaannya butuh beberapa langkah if.
+        static const bool enabled = []() { // enabled = []() { artinya nilai awal enabled diambil dari hasil lambda ini; const membuat nilainya tidak bisa diubah lagi.
+            // if berfungsi untuk menjalankan perintah hanya bila syarat di dalam kurung bernilai benar.
+            // != artinya "tidak sama dengan".
+            // nullptr adalah penunjuk kosong, yaitu penunjuk yang tidak menunjuk ke mana pun.
+            // return berfungsi untuk mengakhiri fungsi (di sini lambda) saat itu juga dan memberikan hasilnya.
+            if (std::getenv("NO_COLOR") != nullptr) return false;  // std::getenv("NO_COLOR") berfungsi untuk membaca variabel lingkungan NO_COLOR, yaitu pengaturan berbentuk NAMA=nilai yang diwariskan
+            // sistem operasi ke program; hasil nullptr berarti variabel itu tidak ada. Bila NO_COLOR ada, pengguna minta tanpa warna, jadi hasilnya false.
+            if (std::getenv("FORCE_COLOR") != nullptr) return true;  // std::getenv("FORCE_COLOR") != nullptr artinya pengguna memaksa warna, jadi hasilnya true tanpa memeriksa terminal.
+        #ifdef _WIN32 // _WIN32: cara memeriksa terminal berbeda di Windows dan macOS/Linux, jadi dipilih lagi; bagian sampai #else hanya untuk Windows.
+            // HANDLE adalah tipe Windows untuk "pegangan", yaitu tanda pengenal sebuah saluran (di sini layar konsol) yang dipakai saat memanggil fungsi Windows lain.
+            HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE); // GetStdHandle(STD_OUTPUT_HANDLE) berfungsi untuk mengambil pegangan ke keluaran layar (konsol), lalu disimpan di output.
+            // DWORD adalah tipe bilangan bulat tanpa tanda negatif milik Windows (32 bit).
+            DWORD  mode     = 0;  // mode = 0 adalah tempat menyimpan mode konsol yang sedang aktif; nilainya diisi GetConsoleMode di baris berikutnya.
+            // == artinya "sama dengan" (membandingkan), berbeda dengan = yang mengisi nilai.
+            // || artinya "atau": hasilnya benar bila salah satu syarat benar.
+            // ! artinya "tidak": membalik benar menjadi salah dan sebaliknya.
+            // & di depan nama variabel berfungsi untuk mengambil alamatnya; &mode adalah alamat variabel mode, supaya GetConsoleMode bisa mengisi variabel itu.
+            if (output == INVALID_HANDLE_VALUE || !GetConsoleMode(output, &mode)) return false; // output == INVALID_HANDLE_VALUE || !GetConsoleMode(output, &mode) artinya pegangannya tidak sah,
+            // atau keluaran bukan konsol (misalnya dialihkan ke berkas) sehingga mode tidak bisa dibaca; maka hasilnya false: tanpa warna.
+            // | (OR per bit) berfungsi untuk menambahkan sebuah bendera ke nilai lama tanpa menghapus bendera yang sudah ada.
+            return SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0; // SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) berfungsi untuk menyalakan mode
+            // virtual terminal agar konsol memahami kode ANSI; SetConsoleMode mengembalikan 0 bila gagal, jadi != 0 berarti berhasil dan warna aktif.
+        #else  // #else: bukan Windows (macOS atau Linux); di sini cukup satu pertanyaan: apakah keluaran layar sebuah terminal?
+            return isatty(fileno(stdout)) != 0; // isatty(fileno(stdout)) != 0 artinya fileno(stdout) memberi nomor saluran keluaran layar, lalu isatty memeriksa apakah saluran itu terminal (bukan berkas);
+            // hasil selain 0 berarti terminal, jadi warna dipakai.
+        #endif  // akhir pemeriksaan terminal sesuai sistem operasi
+        }();  // }(); adalah akhir lambda; tanda () langsung menjalankan lambda satu kali, dan hasilnya menjadi nilai awal enabled.
+        return enabled;  // return enabled; mengembalikan hasil yang tersimpan, jadi pemanggilan berikutnya tidak memeriksa ulang.
     }  // akhir fungsi colorsEnabled()
 
-    // Membungkus teks dengan kode warna, tetapi hanya bila warna sedang aktif. Kalau tidak, teks dikembalikan
-    // apa adanya, dikarenakan kode warna yang ikut tersimpan ke berkas hanya jadi sampah karakter.
-    // Parameter code adalah salah satu konstanta ANSI_... di atas; text adalah teks yang dibungkus.
-    std::string colorize(const char* code, std::string_view text) {
-        // Fungsi ini harus mengembalikan std::string, jadi std::string(text) membuat salinan dari string_view.
-        if (!colorsEnabled()) return std::string(text);  // warna tidak aktif: teks polos
-        // Tanda + pada std::string menyambung teks: kode warna, teks, lalu kode reset (kembali normal).
-        return std::string(code) + std::string(text) + ANSI_RESET;
-    }
+    // Tipe hasil sebuah fungsi ditulis di depan namanya; colorize() di bawah menghasilkan std::string, bukan bool seperti colorsEnabled() di atas.
+    std::string colorize(const char* code, std::string_view text) { // colorize(const char* code, std::string_view text) berfungsi untuk membungkus text dengan kode warna, tetapi hanya bila warna boleh dipakai.
+    // Parameter code diisi salah satu konstanta ANSI_... di atas, sedangkan text dibaca lewat std::string_view tanpa disalin. Hasilnya std::string baru, siap dicetak.
+        if (!colorsEnabled()) return std::string(text);  // !colorsEnabled() artinya warna tidak boleh dipakai, jadi text dikembalikan apa adanya; std::string(text) membuat salinannya sebagai std::string.
+        // + pada teks berfungsi untuk menyambung teks; code dan text diubah dulu ke std::string supaya bisa disambung.
+        return std::string(code) + std::string(text) + ANSI_RESET; // std::string(code) + std::string(text) + ANSI_RESET artinya kode warna, lalu teks, lalu ANSI_RESET agar warna tidak terbawa ke teks berikutnya.
+    } // akhir fungsi colorize()
 
-    // Sebagian aksara memakai dua kolom di terminal: aksara CJK (Tionghoa, Jepang, Korea), Hangul, dan emoji.
-    // Kalau kita menghitungnya satu kolom, tabel bergeser untuk nama berhuruf seperti itu.
-    // Unicode adalah daftar besar yang memberi setiap huruf di dunia satu nomor; nomor itu disebut code point.
-    // Fungsi ini menjawab: apakah sebuah code point termasuk aksara lebar?
-    // Parameternya bertipe unsigned, yaitu bilangan bulat tak bertanda. Dipakai oleh displayWidth() di bawah.
-    bool isWideCodePoint(unsigned codePoint) {
-        // Hasilnya true bila codePoint ada di salah satu rentang berikut; awalan 0x = heksadesimal (basis 16).
-        // a >= X && a <= Y berarti a di antara X dan Y, keduanya termasuk; && = AND, || = OR.
-        // 0x1100-0x115F Hangul Jamo, 0x2E80-0xA4CF aksara CJK dan sekitarnya, 0xAC00-0xD7A3 suku kata Hangul,
-        // 0xF900-0xFAFF ideograf kompatibilitas, 0xFE30-0xFE4F bentuk CJK, 0xFF00-0xFF60 huruf lebar penuh,
-        // 0xFFE0-0xFFE6 simbol lebar penuh, 0x1F300-0x1F64F dan 0x1F900-0x1F9FF emoji.
-        return (codePoint >= 0x1100 && codePoint <= 0x115F) || (codePoint >= 0x2E80 && codePoint <= 0xA4CF)
-            || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF)
-            || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) || (codePoint >= 0xFF00 && codePoint <= 0xFF60)
-            || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) || (codePoint >= 0x1F300 && codePoint <= 0x1F64F)
-            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF);
-    }
+    // unsigned adalah bilangan bulat tanpa tanda negatif (0 ke atas).
+    bool isWideCodePoint(unsigned codePoint) { // isWideCodePoint(unsigned codePoint) berfungsi untuk memeriksa apakah sebuah code point termasuk karakter lebar, yaitu karakter yang digambar terminal selebar dua kolom.
+    // Code point adalah nomor unik sebuah karakter di Unicode, daftar baku semua karakter di dunia. Aksara CJK (Cina, Jepang, Korea), Hangul (huruf Korea), dan emoji termasuk lebar;
+    // bila ini diabaikan, kolom tabel bergeser untuk nama berhuruf seperti itu. Dipakai di displayWidth() di bawah.
+        // && artinya "dan": hasilnya benar hanya bila kedua syarat benar. >= artinya "lebih dari atau sama dengan", dan <= artinya "kurang dari atau sama dengan".
+        // Angka berawalan 0x ditulis dalam heksadesimal (basis 16). Setiap pasangan (>= awal && <= akhir) adalah satu rentang karakter lebar.
+        return (codePoint >= 0x1100 && codePoint <= 0x115F) || (codePoint >= 0x2E80 && codePoint <= 0xA4CF) // (codePoint >= 0x1100 && codePoint <= 0x115F) adalah Hangul Jamo (huruf penyusun Hangul); 0x2E80-0xA4CF adalah CJK dan aksara Asia Timur lain.
+            || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) adalah suku kata Hangul; 0xF900-0xFAFF adalah aksara CJK kompatibilitas.
+            || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) || (codePoint >= 0xFF00 && codePoint <= 0xFF60) // || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) adalah bentuk kompatibilitas CJK; 0xFF00-0xFF60 adalah huruf lebar penuh.
+            || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) || (codePoint >= 0x1F300 && codePoint <= 0x1F64F) // || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) adalah tanda lebar penuh (misalnya ¥); 0x1F300-0x1F64F adalah emoji.
+            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); // || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); adalah emoji tambahan. Hasilnya true bila code point masuk salah satu rentang di atas.
+    } // akhir fungsi isWideCodePoint()
 
-    // Berapa kolom yang dipakai sebuah teks di layar? Jawabannya bukan jumlah byte-nya: huruf UTF-8 multibyte
-    // (é, ö, garis kotak) tetap satu kolom, aksara lebar (CJK, emoji) dua kolom, dan kode warna ANSI nol
-    // kolom. Fungsi ini menghitung lebar yang benar itu. Hasilnya std::size_t, dan dipakai di banyak tempat:
-    // pembungkus teks, kotak, pemeriksa panjang nama, dan tabel.
-    std::size_t displayWidth(std::string_view text) {
-        std::size_t width = 0;  // jumlah kolom yang sudah terhitung
-        bool inEscape = false;  // true selama kita berada di dalam kode warna "\033[...m"
-        unsigned codePoint = 0; // code point yang sedang dirangkai dari byte-byte UTF-8
-        int pending = 0;        // sisa byte lanjutan yang masih ditunggu untuk code point itu
-        // Kita jalan byte demi byte dengan range-based for: for (elemen : kumpulan) mengunjungi tiap elemen
-        // satu per satu. const unsigned char c membuat nilai byte 0-255, dikarenakan char biasa bisa negatif
-        // dan itu merusak perbandingan bit di bawah.
-        for (const unsigned char c : text) {
-            // Di dalam kode warna tidak ada yang dihitung; kita hanya menunggu 'm'. continue = lewati sisa
-            // badan loop, langsung ke byte berikutnya.
-            if (inEscape) { if (c == 'm') inEscape = false; continue; }
-            if (c == 0x1B) { inEscape = true; continue; }  // 0x1B = ESC, pembuka kode warna
-            // Satu huruf non-ASCII terdiri dari satu byte awal dan 1-3 byte lanjutan. Pola bit ditulis seperti
-            // 10xxxxxx: x boleh 0 atau 1. Byte lanjutan selalu diawali bit 10. c & 0xC0 (AND per bit dengan
-            // 11000000) menyisakan 2 bit teratas saja; bila hasilnya 0x80 (10000000), c adalah byte lanjutan.
-            // Byte seperti ini tidak menambah kolom; ia hanya menyumbang 6 bit ke code point.
-            if ((c & 0xC0) == 0x80) {
-                // Baris di bawah padat, jadi kita urai. Bila masih ada byte lanjutan yang ditunggu (pending > 0):
-                // codePoint << 6 menggeser bitnya ke kiri untuk memberi ruang 6 bit, lalu | (OR per bit)
-                // menempelkan 6 bit baru dari c & 0x3F. --pending mengurangi sisa tunggu satu (-- = kurang 1,
-                // ++ = tambah 1). Kalau sisanya habis dan code point-nya aksara lebar, ++width menambah satu
-                // kolom lagi.
-                if (pending > 0) { codePoint = (codePoint << 6) | (c & 0x3F); if (--pending == 0 && isWideCodePoint(codePoint)) ++width; }
-                continue;
-            }
-            ++width;  // setiap byte awal = satu karakter = minimal satu kolom
-            // Pola bit byte awal memberi tahu panjang karakter: 110xxxxx = 2 byte, 1110xxxx = 3 byte,
-            // 11110xxx = 4 byte. Bit sisanya menjadi awal code point, dan pending = jumlah byte lanjutan yang
-            // ditunggu. Selain pola itu berarti ASCII 1 byte, tanpa lanjutan.
-            if      ((c & 0xE0) == 0xC0) { codePoint = c & 0x1F; pending = 1; }  // 2 byte: 5 bit awal
-            else if ((c & 0xF0) == 0xE0) { codePoint = c & 0x0F; pending = 2; }  // 3 byte: 4 bit awal
-            else if ((c & 0xF8) == 0xF0) { codePoint = c & 0x07; pending = 3; }  // 4 byte: 3 bit awal
-            else                         { pending = 0; }                        // ASCII
-        }  // akhir for
-        return width;
+    std::size_t displayWidth(std::string_view text) { // displayWidth(std::string_view text) berfungsi untuk menghitung berapa kolom layar yang dipakai text; hasilnya tidak selalu sama dengan jumlah byte-nya.
+    // UTF-8 menyimpan satu karakter dalam 1 sampai 4 byte, padahal huruf é atau garis kotak tetap selebar satu kolom; aksara lebar (CJK, emoji) memakai dua kolom, dan kode warna ANSI
+    // memakai nol kolom. Karena itu teks dihitung byte demi byte. Dipakai di banyak tempat: pembungkus teks, kotak, pemeriksa panjang nama, dan tabel.
+        std::size_t width = 0;  // width = 0 adalah jumlah kolom yang sudah terhitung, mula-mula 0.
+        bool inEscape = false;  // inEscape = false artinya belum berada di dalam kode warna "\033[...m"; nilainya true selama berada di dalamnya.
+        unsigned codePoint = 0; // codePoint = 0 adalah code point yang sedang dirangkai dari byte-byte UTF-8.
+        int pending = 0;        // pending = 0 adalah jumlah byte lanjutan UTF-8 yang masih ditunggu untuk melengkapi code point.
+        // for (elemen : kumpulan) adalah perulangan "untuk setiap" (range-based for): mengambil setiap elemen satu per satu dari awal sampai akhir, tanpa perlu indeks.
+        // unsigned char adalah satu byte bernilai 0-255; char biasa bisa negatif untuk byte non-ASCII, dan itu merusak perbandingan bit di bawah.
+        for (const unsigned char c : text) { // for (const unsigned char c : text) artinya ambil setiap byte di text satu per satu ke variabel c; const berarti c tidak diubah di dalam perulangan.
+            // continue berfungsi untuk langsung lanjut ke putaran berikutnya tanpa menjalankan baris di bawahnya.
+            if (inEscape) { if (c == 'm') inEscape = false; continue; } // if (inEscape) artinya sedang di dalam kode warna: byte dilewati (nol kolom) sampai huruf 'm' penutupnya; 'm' bertanda petik tunggal adalah satu karakter.
+            if (c == 0x1B) { inEscape = true; continue; }  // c == 0x1B artinya byte ini karakter ESC (nomor 27, sama dengan "\033"), pembuka kode warna.
+            // & di antara dua nilai adalah AND per bit: berfungsi untuk mengambil bit tertentu saja dari sebuah byte. Satu byte = 8 bit, masing-masing 0 atau 1.
+            if ((c & 0xC0) == 0x80) { // (c & 0xC0) == 0x80 artinya byte ini byte lanjutan UTF-8, yang selalu berpola 10xxxxxx: & 0xC0 mengambil 2 bit teratas, dan hasil 0x80 berarti "10".
+                // << berfungsi untuk menggeser bit ke kiri. -- berfungsi untuk mengurangi nilai variabel sebanyak satu, dan ++ untuk menambahnya sebanyak satu.
+                if (pending > 0) { codePoint = (codePoint << 6) | (c & 0x3F); if (--pending == 0 && isWideCodePoint(codePoint)) ++width; } // (codePoint << 6) | (c & 0x3F) artinya geser code point 6 bit ke kiri,
+                // lalu tempelkan 6 bit data byte ini. Bila --pending menjadi 0, code point sudah lengkap; karakter lebar lalu mendapat satu kolom tambahan (++width),
+                // karena kolom pertamanya sudah dihitung di byte awal.
+                continue; // continue; artinya byte lanjutan bukan karakter baru, jadi tidak menambah kolom.
+            } // akhir penanganan byte lanjutan
+            ++width;  // ++width; artinya setiap byte awal = satu karakter = minimal satu kolom.
+            // Pola bit byte awal menentukan berapa byte lanjutan yang menyusul; bit x milik byte awal disimpan sebagai awal code point.
+            if      ((c & 0xE0) == 0xC0) { codePoint = c & 0x1F; pending = 1; }  // (c & 0xE0) == 0xC0 artinya byte awal berpola 110xxxxx: menyusul 1 byte lanjutan, dan 5 bit data (c & 0x1F) disimpan.
+            // else if berfungsi untuk memeriksa syarat berikutnya hanya bila syarat sebelumnya salah; else terakhir dijalankan bila semua syarat salah.
+            else if ((c & 0xF0) == 0xE0) { codePoint = c & 0x0F; pending = 2; }  // (c & 0xF0) == 0xE0 artinya pola 1110xxxx: menyusul 2 byte lanjutan, dan 4 bit data (c & 0x0F) disimpan.
+            else if ((c & 0xF8) == 0xF0) { codePoint = c & 0x07; pending = 3; }  // (c & 0xF8) == 0xF0 artinya pola 11110xxx: menyusul 3 byte lanjutan, dan 3 bit data (c & 0x07) disimpan.
+            else                         { pending = 0; }                        // else { pending = 0; } artinya byte ASCII biasa (pola 0xxxxxxx) yang tidak punya byte lanjutan.
+        }  // akhir perulangan setiap byte
+        return width; // return width; mengembalikan jumlah kolom yang terhitung.
     }  // akhir fungsi displayWidth()
 
-    // Seberapa lebar jendela terminal sekarang? Fungsi ini bertanya setiap kali dipanggil, jadi tampilan ikut
-    // menyesuaikan bila jendela diubah ukurannya. Kalau tidak bisa dijawab (keluaran bukan terminal), kita
-    // coba variabel lingkungan COLUMNS, lalu pakai 80 kolom, lebar bawaan terminal pada umumnya. Hasilnya
-    // tidak pernah kurang dari 50, dikarenakan di bawah itu tabel tidak bisa rapi. Hasilnya int, dipakai oleh
-    // drawBox() dan printError() di bawah.
-    int terminalWidth() {
-        int cols = 0;  // 0 berarti "belum diketahui"
-    // Cara Windows sampai #else, cara macOS/Linux setelah #else.
-    #ifdef _WIN32
-        CONSOLE_SCREEN_BUFFER_INFO info;  // struct Windows penampung informasi layar konsol
-        // GetConsoleScreenBufferInfo mengisi info lewat alamatnya (&info). Bila berhasil, lebar jendela =
-        // kolom kanan - kolom kiri + 1, dikarenakan kedua ujungnya termasuk.
-        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info)) cols = info.srWindow.Right - info.srWindow.Left + 1;
-    #else  // bukan Windows: macOS atau Linux
-        struct winsize ws;  // struct dari <sys/ioctl.h> penampung ukuran jendela (baris dan kolom)
-        // ioctl dengan TIOCGWINSZ bertanya ukuran jendela dan mengisinya ke ws; hasil 0 berarti berhasil.
-        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) cols = ws.ws_col;
-    #endif  // selesai memilih cara membaca lebar sesuai sistem operasi
-        // Masih belum tahu? Coba COLUMNS. env adalah pointer ke teks hasil getenv, nullptr bila tidak ada;
-        // std::atoi mengubah teks itu menjadi int (0 bila bukan angka).
-        if (cols <= 0) { const char* env = std::getenv("COLUMNS"); if (env != nullptr) cols = std::atoi(env); }
-        if (cols <= 0) cols = 80;  // masih belum tahu juga: pakai 80
-        return std::max(50, cols);  // std::max memilih yang terbesar: tidak pernah kurang dari 50
+    int terminalWidth() { // terminalWidth() berfungsi untuk menanyakan lebar jendela terminal (dalam kolom) setiap kali dipanggil, jadi tampilan ikut menyesuaikan bila jendela diubah ukurannya.
+    // Bila terminal tidak bisa ditanya (keluaran bukan terminal), dicoba variabel lingkungan COLUMNS; bila itu juga tidak ada, dipakai 80 kolom, ukuran bawaan terminal pada umumnya.
+    // Hasilnya int dan tidak pernah di bawah 50, karena di bawah 50 kolom tabel tidak bisa rapi. Dipakai oleh drawBox() dan printError() di bawah.
+        int cols = 0;  // cols = 0 artinya lebar belum diketahui.
+    #ifdef _WIN32 // _WIN32: cara bertanya ke terminal berbeda di Windows dan macOS/Linux, jadi dipilih lagi; bagian sampai #else hanya untuk Windows.
+        // CONSOLE_SCREEN_BUFFER_INFO adalah struct milik Windows; tanda titik (.) berfungsi untuk mengambil salah satu anggotanya.
+        CONSOLE_SCREEN_BUFFER_INFO info;  // CONSOLE_SCREEN_BUFFER_INFO info; adalah tempat menampung keterangan jendela konsol; bagian srWindow menyimpan nomor kolom kiri (Left) dan kanan (Right).
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info)) cols = info.srWindow.Right - info.srWindow.Left + 1; // GetConsoleScreenBufferInfo(...) mengisi info lewat alamatnya (&info);
+        // bila berhasil, lebar jendela = Right - Left + 1, karena kedua ujungnya termasuk.
+    #else  // #else: bukan Windows (macOS atau Linux)
+        // struct di depan winsize menandakan bahwa winsize adalah sebuah struct; winsize berasal dari <sys/ioctl.h>.
+        struct winsize ws;  // struct winsize ws; adalah tempat menampung ukuran jendela; bagian ws_col berisi jumlah kolom.
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) cols = ws.ws_col; // ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) berfungsi untuk meminta ukuran jendela dari saluran keluaran layar (STDOUT_FILENO)
+        // dan mengisinya ke ws lewat alamatnya (&ws); hasil 0 berarti berhasil, lalu cols diisi jumlah kolom.
+    #endif  // akhir pembacaan lebar sesuai sistem operasi
+        // std::atoi berfungsi untuk mengubah teks angka, misalnya "100", menjadi bilangan int 100 (0 bila bukan angka).
+        if (cols <= 0) { const char* env = std::getenv("COLUMNS"); if (env != nullptr) cols = std::atoi(env); } // cols <= 0 artinya lebar masih belum diketahui, jadi dicoba variabel lingkungan COLUMNS;
+        // env menunjuk ke teksnya, atau bernilai nullptr bila COLUMNS tidak ada.
+        if (cols <= 0) cols = 80;  // cols = 80 adalah lebar bawaan bila lebar tetap belum diketahui.
+        // std::max berfungsi untuk memilih yang lebih besar dari dua nilai (berasal dari <algorithm>).
+        return std::max(50, cols);  // std::max(50, cols) artinya hasilnya tidak pernah di bawah 50 kolom.
     }  // akhir fungsi terminalWidth()
 
-    // Jendela terminal bisa sempit, dan teks yang lebih lebar dari jendela tidak boleh terpotong sembarangan.
-    // Fungsi ini memotong satu baris panjang menjadi beberapa baris, selalu pada spasi. Baris lanjutannya
-    // diberi indentasi "gantung" (sejumlah spasi di depan) supaya sejajar dengan isi setelah label.
-    // Hasilnya daftar baris, bertipe std::vector<std::string>: tipe isi vector ditulis di antara < >.
-    // Tanda & pada const std::string& text membuat text menjadi referensi: nama lain untuk variabel milik
-    // pemanggil, jadi teksnya tidak disalin. const (sudah dibahas di colorsEnabled()) menjaganya tetap utuh.
-    // maxWidth = lebar maksimal dalam kolom, hangingIndent = jumlah spasi indentasi gantung.
-    // Dipakai oleh drawBox() dan printError() di bawah.
-    std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) {
-        std::vector<std::string> result;  // daftar baris hasil pemotongan
-        // Jendela terlalu sempit untuk indentasi + 10 kolom isi? Kecilkan indentasinya jadi 2 spasi saja.
-        if (hangingIndent + 10 > maxWidth) hangingIndent = 2;
-        std::string remaining = text;  // salinan teks yang belum terpotong; dipendekkan tiap putaran
-        // while = ulangi selama kondisinya benar. Selama sisa teks masih lebih lebar dari maxWidth (dihitung
-        // per kolom), kita cari spasi terakhir sebelum batas, potong di sana, lalu ulangi pada sisanya.
-        while (displayWidth(remaining) > maxWidth) {
-            // col menghitung kolom; cutPos menyimpan posisi spasi tempat memotong; std::string::npos = "tidak ada".
-            std::size_t col = 0, cutPos = std::string::npos;
-            bool inEscape = false;  // true selama di dalam kode warna ANSI
-            // for dengan indeks i dari 0 sampai sebelum remaining.size(): menelusuri byte demi byte.
-            for (std::size_t i = 0; i < remaining.size(); ++i) {
-                // static_cast<T>(x) mengubah x ke tipe T secara terang-terangan. Di sini char (bisa negatif)
-                // diubah ke unsigned char, nilai 0-255, supaya uji bit benar.
-                const unsigned char c = static_cast<unsigned char>(remaining[i]);
-                if (inEscape) { if (c == 'm') inEscape = false; continue; }  // di dalam kode warna: tunggu 'm'
-                if (c == 0x1B) { inEscape = true; continue; }  // ESC: awal kode warna
-                if ((c & 0xC0) == 0x80) continue;  // byte lanjutan UTF-8: bukan kolom baru
-                if (col >= maxWidth) break;  // break = keluar dari loop: batas lebar sudah lewat
-                if (c == ' ' && col > hangingIndent) cutPos = i;  // spasi setelah indentasi: calon titik potong
-                ++col;
-            }  // akhir for
-            if (cutPos == std::string::npos) break;  // tidak ada spasi untuk memotong: biarkan apa adanya
-            // substr(0, cutPos) = potongan sebelum spasi; push_back menambahkannya di akhir vector.
-            result.push_back(remaining.substr(0, cutPos));
-            // Sisa setelah spasi (substr(cutPos + 1)) diberi awalan spasi sebanyak hangingIndent, dibuat
-            // dengan std::string(jumlah, ' ').
-            remaining = std::string(hangingIndent, ' ') + remaining.substr(cutPos + 1);
-        }  // akhir while
-        result.push_back(remaining);  // sisa terakhir sudah muat: jadi baris penutup
-        return result;
+    // std::vector<std::string> adalah daftar berurutan berisi teks; di sini menjadi tipe hasil fungsi, satu elemen untuk satu baris. Tipe isi vector ditulis di antara < >.
+    // const std::string& adalah referensi tetap (const&): tanda & membuat text menjadi nama lain untuk variabel milik pemanggil, jadi teksnya tidak disalin, dan const membuat teks itu tidak boleh diubah.
+    std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) { // wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent)
+    // berfungsi untuk memotong text di spasi menjadi beberapa baris yang masing-masing muat dalam maxWidth kolom, supaya terminal tidak memotongnya sembarangan.
+    // Baris lanjutan diberi indentasi gantung sebanyak hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox() dan printError() di bawah.
+        std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
+        if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
+        std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
+        // while berfungsi untuk mengulang isi blok selama syarat di dalam kurung masih benar.
+        while (displayWidth(remaining) > maxWidth) { // displayWidth(remaining) > maxWidth artinya sisa teks masih lebih lebar dari maxWidth, jadi potong satu baris lagi dari depannya.
+            std::size_t col = 0, cutPos = std::string::npos; // col menghitung kolom layar, dan cutPos menyimpan posisi spasi tempat memotong; std::string::npos adalah nilai khusus yang berarti "tidak ditemukan" (belum ada spasi).
+            bool inEscape = false;  // inEscape = false: nilainya true selama berada di dalam kode warna, yang tidak memakai kolom.
+            // for (awal; syarat; langkah) adalah perulangan for biasa: mulai dari awal, berulang selama syarat benar, dan menjalankan langkah setiap selesai satu putaran.
+            for (std::size_t i = 0; i < remaining.size(); ++i) { // for (std::size_t i = 0; i < remaining.size(); ++i) artinya periksa setiap byte remaining dari posisi 0 sampai terakhir untuk mencari
+            // spasi terakhir sebelum batas lebar; remaining.size() adalah jumlah byte.
+                // static_cast<...> berfungsi untuk mengubah tipe sebuah nilai secara tertulis, sehingga perubahan itu jelas terlihat di kode.
+                const unsigned char c = static_cast<unsigned char>(remaining[i]); // static_cast<unsigned char>(remaining[i]) mengubah byte ke-i (dihitung dari 0) menjadi unsigned char 0-255,
+                // karena byte UTF-8 di atas 127 bisa terbaca sebagai angka negatif pada char biasa.
+                if (inEscape) { if (c == 'm') inEscape = false; continue; }  // if (inEscape) artinya lewati isi kode warna sampai huruf 'm'.
+                if (c == 0x1B) { inEscape = true; continue; }  // c == 0x1B artinya ESC, awal kode warna.
+                if ((c & 0xC0) == 0x80) continue;  // (c & 0xC0) == 0x80 artinya byte lanjutan UTF-8; ia bukan karakter baru, jadi tidak menambah kolom.
+                // break berfungsi untuk keluar dari perulangan saat itu juga.
+                if (col >= maxWidth) break;  // col >= maxWidth artinya batas lebar tercapai, jadi berhenti mencari.
+                if (c == ' ' && col > hangingIndent) cutPos = i;  // c == ' ' && col > hangingIndent artinya spasi ini menjadi calon titik potong, asalkan letaknya setelah indentasi gantung;
+                // yang akhirnya tersimpan adalah spasi terakhir sebelum batas lebar.
+                ++col;  // ++col; artinya karakter ini memakai satu kolom.
+            }  // akhir perulangan mencari titik potong
+            if (cutPos == std::string::npos) break;  // cutPos == std::string::npos artinya tidak ada spasi untuk memotong: keluar dari while dan biarkan sisa teks apa adanya.
+            result.push_back(remaining.substr(0, cutPos)); // remaining.substr(0, cutPos) mengambil teks dari awal sampai sebelum spasi, lalu push_back menambahkannya ke ujung result.
+            remaining = std::string(hangingIndent, ' ') + remaining.substr(cutPos + 1); // std::string(hangingIndent, ' ') adalah hangingIndent buah spasi, disambung dengan sisa teks mulai setelah spasi (cutPos + 1).
+        }  // akhir perulangan while
+        result.push_back(remaining);  // result.push_back(remaining); artinya sisa terakhir sudah muat, jadi ia menjadi baris terakhir.
+        return result; // return result; mengembalikan daftar baris hasil.
     }  // akhir fungsi wrapText()
 
-    // Petunjuk dan rekap hasil ditampilkan di dalam kotak berjudul supaya terpisah jelas dari pertanyaan.
-    // Lebar kotak mengikuti baris terpanjang, tetapi tidak pernah melebihi lebar terminal: baris yang terlalu
-    // panjang dibungkus dulu dengan wrapText(), dengan indentasi gantung sejajar label bila baris berpola
-    // "Label : isi". Parameter title = judul kotak, lines = daftar baris isi (dibaca lewat referensi, tanpa
-    // disalin). Dipakai oleh printInstructions() di BAGIAN 5 dan run() di BAGIAN 6.
-    void drawBox(std::string_view title, const std::vector<std::string>& lines) {
-        // Lebar isi maksimal = lebar terminal dikurangi 5: 2 tepi kotak, 2 margin, dan 1 kolom cadangan,
-        // dikarenakan sebagian terminal menambah baris kosong bila sebuah baris persis selebar jendela.
-        // static_cast<std::size_t> mengubah hasil int menjadi size_t supaya sebanding dengan displayWidth().
-        const std::size_t maxWidth = static_cast<std::size_t>(terminalWidth() - 5);
-        std::vector<std::string> contentLines;  // baris isi setelah dibungkus; bisa lebih banyak dari lines
-        // Bungkus tiap baris satu per satu. b dibaca lewat referensi (const std::string&) tanpa disalin.
-        for (const std::string& b : lines) {
-            std::size_t hangingIndent = 2;  // indentasi gantung bawaan: 2 spasi
-            const std::size_t labelPos = b.find(" : ");  // posisi pemisah label dan isi; npos bila tidak ada
-            // Ada label selebar paling banyak 28 kolom? Baris lanjutan disejajarkan dengan isi setelah " : ".
-            // Label yang lebih lebar akan membuat lanjutan menjorok terlalu jauh, jadi tetap 2 spasi.
-            if (labelPos != std::string::npos && displayWidth(b.substr(0, labelPos)) <= 28) {
-                hangingIndent = displayWidth(b.substr(0, labelPos)) + 3;  // lebar label + lebar " : "
-            }
-            // Setiap potongan hasil wrapText() masuk ke contentLines.
-            for (const std::string& piece : wrapText(b, maxWidth, hangingIndent)) contentLines.push_back(piece);
-        }  // akhir for
-        std::size_t width = displayWidth(title) + 4;  // lebar dalam minimal: judul + hiasan
-        // Lebar dalam = baris terpanjang + 2 margin; std::max menyimpan yang terbesar.
-        for (const std::string& b : contentLines) width = std::max(width, displayWidth(b) + 2);
-        width = std::min(width, maxWidth + 2);  // tetapi tidak melebihi lebar isi maksimal + 2 margin
-        std::string filler;  // garis pengisi di sebelah kanan judul pada tepi atas
-        // Karakter garis ditulis dengan notasi Unicode: backslash-u lalu 4 digit heksadesimal nomor
-        // karakternya. U+2500 = garis mendatar (─). += menyambung satu garis ke filler tiap putaran.
-        for (std::size_t i = displayWidth(title) + 3; i < width; ++i) filler += "\u2500";
-        // Sekarang kita mencetak. std::cout << x mencetak x ke layar; beberapa << berurutan mencetak
-        // bagian-bagiannya berurutan (berbeda dengan << 6 di displayWidth(), yang menggeser bit), dan '\n'
-        // adalah ganti baris. Tepi atas: sudut kiri atas U+250C dan garis, judul berwarna, garis pengisi,
-        // sudut kanan atas U+2510.
-        std::cout << colorize(ANSI_DIM, "\u250c\u2500 ") << colorize(ANSI_TITLE, title) << colorize(ANSI_DIM, " " + filler + "\u2510") << '\n';
-        // Tiap baris isi: tepi kiri U+2502, spasi + teks, spasi pengisi sampai selebar kotak, tepi kanan U+2502.
-        for (const std::string& b : contentLines) {
-            const std::string rowText = " " + b;  // margin kiri 1 spasi
-            const std::size_t contentWidth = displayWidth(rowText);  // lebar tampil baris ini, tanpa kode warna
-            // Jumlah spasi pengisi ditulis dengan operator ternary (kondisi ? nilaiJikaBenar : nilaiJikaSalah):
-            // width - contentWidth bila width lebih besar, selain itu 0, dikarenakan size_t tidak boleh negatif.
-            std::cout << colorize(ANSI_DIM, "\u2502") << rowText << std::string(width > contentWidth ? width - contentWidth : 0, ' ')
-                      << colorize(ANSI_DIM, "\u2502") << '\n';
-        }  // akhir for
-        std::string bottomLine;  // garis mendatar tepi bawah
-        for (std::size_t i = 0; i < width; ++i) bottomLine += "\u2500";  // ─ sebanyak lebar dalam kotak
-        // Tepi bawah: sudut kiri bawah U+2514, garis, sudut kanan bawah U+2518, semuanya abu-abu.
-        std::cout << colorize(ANSI_DIM, "\u2514" + bottomLine + "\u2518") << '\n';
+    void drawBox(std::string_view title, const std::vector<std::string>& lines) { // drawBox(std::string_view title, const std::vector<std::string>& lines) berfungsi untuk menggambar kotak berjudul title
+    // berisi baris-baris lines. Kotak membuat petunjuk dan rekap hasil terpisah jelas dari pertanyaan. Lebar kotak mengikuti baris terpanjang, tetapi tidak pernah
+    // melebihi lebar terminal; baris yang terlalu panjang dibungkus dengan wrapText(), dan baris berpola "Label : isi" dibuat sejajar dengan isi setelah label.
+    // Garis kotak ditulis sebagai kode Unicode di dalam string: "\u250c" = ┌, "\u2510" = ┐, "\u2514" = └, "\u2518" = ┘, "\u2500" = ─ (garis datar), dan "\u2502" = │ (garis tegak).
+    // Dipakai oleh printInstructions() di BAGIAN 5 dan run() di BAGIAN 6.
+        const std::size_t maxWidth = static_cast<std::size_t>(terminalWidth() - 5); // terminalWidth() - 5 adalah lebar isi terbesar: lebar terminal dikurangi 2 tepi kotak, 2 margin, dan 1 kolom cadangan;
+        // kolom cadangan perlu karena sebagian terminal menambah baris kosong bila sebuah baris persis selebar jendela. static_cast<std::size_t> mengubah hasil int menjadi std::size_t.
+        std::vector<std::string> contentLines;  // contentLines adalah baris isi setelah dibungkus, siap digambar; bisa lebih banyak dari lines.
+        for (const std::string& b : lines) { // for (const std::string& b : lines) artinya ambil setiap baris b di lines tanpa menyalinnya, lalu tentukan indentasi gantungnya dan bungkus dengan wrapText().
+            std::size_t hangingIndent = 2;  // hangingIndent = 2 adalah bawaan: baris lanjutan menjorok 2 spasi.
+            const std::size_t labelPos = b.find(" : ");  // b.find(" : ") mencari posisi " : " pertama, atau std::string::npos bila tidak ada.
+            if (labelPos != std::string::npos && displayWidth(b.substr(0, labelPos)) <= 28) { // labelPos != std::string::npos && ... <= 28 artinya ada " : " dan label di depannya paling lebar 28 kolom,
+            // jadi baris ini berpola "Label : isi"; label yang lebih lebar akan membuat lanjutan menjorok terlalu jauh, jadi tetap 2 spasi.
+                hangingIndent = displayWidth(b.substr(0, labelPos)) + 3;  // displayWidth(b.substr(0, labelPos)) + 3 artinya lebar label ditambah 3 untuk " : ", jadi lanjutannya sejajar dengan isi setelah " : ".
+            } // akhir pemeriksaan pola "Label : isi"
+            for (const std::string& piece : wrapText(b, maxWidth, hangingIndent)) contentLines.push_back(piece); // wrapText(b, maxWidth, hangingIndent) memotong b, lalu setiap potongan (piece) dimasukkan ke contentLines.
+        }  // akhir perulangan membungkus baris isi
+        std::size_t width = displayWidth(title) + 4;  // displayWidth(title) + 4 adalah lebar dalam minimal: "─ " sebelum judul (2), spasi setelah judul (1), dan paling sedikit satu ─ pengisi (1).
+        for (const std::string& b : contentLines) width = std::max(width, displayWidth(b) + 2); // std::max(width, displayWidth(b) + 2) artinya kotak diperlebar sampai baris terpanjang + 2, yaitu margin kiri dan kanan.
+        // std::min berfungsi untuk memilih yang lebih kecil dari dua nilai (berasal dari <algorithm>).
+        width = std::min(width, maxWidth + 2);  // std::min(width, maxWidth + 2) artinya lebar kotak tidak boleh lebih dari maxWidth + 2 margin.
+        std::string filler;  // filler adalah garis pengisi di kanan judul, mula-mula kosong.
+        // += berfungsi untuk menambahkan teks ke ujung teks yang sudah ada.
+        for (std::size_t i = displayWidth(title) + 3; i < width; ++i) filler += "\u2500"; // filler += "\u2500" artinya tambahkan ─ sebanyak sisa lebar setelah "─ judul ".
+        // std::cout << berfungsi untuk mencetak ke layar; beberapa << berurutan mencetak bagian-bagiannya satu per satu dari kiri ke kanan (berbeda dengan << 6 di displayWidth(), yang menggeser bit).
+        std::cout << colorize(ANSI_DIM, "\u250c\u2500 ") << colorize(ANSI_TITLE, title) << colorize(ANSI_DIM, " " + filler + "\u2510") << '\n'; // colorize(ANSI_DIM, "\u250c\u2500 ") ... adalah garis atas ┌─ judul ───┐:
+        // garisnya abu-abu dan judulnya cyan tebal; '\n' adalah karakter pindah baris.
+        for (const std::string& b : contentLines) { // for (const std::string& b : contentLines) artinya cetak setiap baris isi: │, teks, spasi pengisi sampai lebar kotak, lalu │ lagi.
+            const std::string rowText = " " + b;  // " " + b artinya satu spasi margin kiri di depan baris.
+            const std::size_t contentWidth = displayWidth(rowText);  // contentWidth adalah lebar rowText di layar, tanpa kode warna.
+            // Operator ternary (a ? b : c) artinya "bila a benar pakai b, bila tidak pakai c". Di baris ini ia menjaga jumlah spasi pengisi paling sedikit 0, karena std::size_t
+            // tidak bisa negatif: pengurangan yang hasilnya di bawah 0 akan berubah menjadi angka raksasa.
+            std::cout << colorize(ANSI_DIM, "\u2502") << rowText << std::string(width > contentWidth ? width - contentWidth : 0, ' ') // width > contentWidth ? width - contentWidth : 0 adalah jumlah spasi pengisi.
+                      << colorize(ANSI_DIM, "\u2502") << '\n'; // colorize(ANSI_DIM, "\u2502") adalah │ garis tegak kanan, lalu '\n' pindah baris.
+        }  // akhir perulangan baris isi
+        std::string bottomLine;  // bottomLine adalah garis bawah, mula-mula kosong.
+        for (std::size_t i = 0; i < width; ++i) bottomLine += "\u2500";  // bottomLine += "\u2500" artinya tambahkan ─ sebanyak lebar kotak.
+        std::cout << colorize(ANSI_DIM, "\u2514" + bottomLine + "\u2518") << '\n'; // "\u2514" + bottomLine + "\u2518" adalah garis bawah └───┘ berwarna abu-abu.
     }  // akhir fungsi drawBox()
 
-    // Pesan kesalahan dicetak merah dan dibungkus sesuai lebar terminal supaya tidak terpotong jendela sempit.
-    // Baris lanjutan menjorok 6 spasi, sejajar dengan teks setelah tanda "[!]". Dipakai oleh fungsi-fungsi
-    // pembaca input di BAGIAN 4 (kecuali readLine(), yang mengirim pesannya ke std::cerr).
-    void printError(const std::string& text) {
-        // Lebar maksimal = lebar terminal - 1, indentasi gantung 6 kolom; tiap potongan dicetak merah tebal.
-        for (const std::string& b : wrapText(text, static_cast<std::size_t>(terminalWidth() - 1), 6)) {
-            std::cout << colorize(ANSI_ERROR, b) << '\n';
-        }
-    }
+    void printError(const std::string& text) { // printError(const std::string& text) berfungsi untuk mencetak pesan kesalahan berwarna merah yang dibungkus sesuai lebar terminal, agar pesan panjang
+    // tidak terpotong jendela sempit. Pesannya selalu diawali "  [!] ", jadi baris lanjutan menjorok 6 spasi agar sejajar dengan teks setelah tanda "[!]".
+    // Dipakai oleh fungsi-fungsi pembaca input di BAGIAN 4 (kecuali readLine(), yang mengirim pesannya ke std::cerr).
+        for (const std::string& b : wrapText(text, static_cast<std::size_t>(terminalWidth() - 1), 6)) { // wrapText(text, static_cast<std::size_t>(terminalWidth() - 1), 6) artinya lebar bungkus = lebar terminal
+        // dikurangi 1 kolom cadangan, dan 6 = indentasi gantung.
+            std::cout << colorize(ANSI_ERROR, b) << '\n'; // colorize(ANSI_ERROR, b) artinya setiap baris hasil bungkus dicetak merah tebal.
+        } // akhir perulangan baris pesan
+    } // akhir fungsi printError()
 
-    // Mencetak satu garis pembatas abu-abu sepanjang TITLE_WIDTH (60) karakter ch, misalnya '='.
-    // Dipakai oleh printTitle() di BAGIAN 5.
-    void printRule(char ch) {
-        // std::string(TITLE_WIDTH, ch) membuat teks berisi ch diulang TITLE_WIDTH kali.
-        std::cout << colorize(ANSI_DIM, std::string(TITLE_WIDTH, ch)) << '\n';
-    }
+    // char adalah tipe satu karakter, ditulis di antara petik tunggal, misalnya '='.
+    void printRule(char ch) { // printRule(char ch) berfungsi untuk mencetak satu garis pembatas abu-abu sepanjang TITLE_WIDTH (60) karakter ch. Dipakai oleh printTitle() di BAGIAN 5.
+        std::cout << colorize(ANSI_DIM, std::string(TITLE_WIDTH, ch)) << '\n'; // std::string(TITLE_WIDTH, ch) membuat teks berisi ch diulang TITLE_WIDTH kali, lalu dicetak abu-abu dan diakhiri pindah baris.
+    } // akhir fungsi printRule()
 
     // ===== BAGIAN 4: FUNGSI BANTU INPUT =====
-    // Input dibaca di banyak tempat: mata kuliah, jumlah, nama, nilai. Daripada menulis kode pembacaan dan
-    // pemeriksaan yang sama berulang-ulang, kita pecah menjadi fungsi-fungsi kecil di bagian ini. Polanya
-    // selalu sama: baca satu baris sebagai teks, rapikan, periksa; kalau salah, beri pesan dan tanya lagi.
+    // Input dibaca di banyak tempat: mata kuliah, jumlah, nama, nilai. Daripada menulis kode pembacaan dan pemeriksaan yang sama berulang-ulang, kita pecah menjadi
+    // fungsi-fungsi kecil di bagian ini. Polanya selalu sama: baca satu baris sebagai teks, rapikan, periksa; kalau salah, beri pesan dan tanya lagi.
 
-    // Dasar dari semua pembaca input: tampilkan prompt (teks pertanyaan, dicetak tebal) lalu baca satu baris
-    // ketikan pengguna. Hasilnya std::string.
-    std::string readLine(std::string_view prompt) {
-        std::string line;  // panjang ketikan tidak pasti, jadi std::string
-        std::cout << colorize(ANSI_BOLD, prompt);  // tebal supaya pertanyaan mudah dibedakan dari keterangan
-        // std::getline membaca satu baris penuh termasuk spasi (std::cin >> berhenti di spasi pertama).
-        // Kalau input ditutup (Ctrl+D di macOS/Linux, Ctrl+Z lalu Enter di Windows), getline gagal.
-        // Kita tangkap dengan ! (NOT) lalu menghentikan program, dikarenakan tanpa ini pertanyaan yang sama
-        // akan diulang tanpa henti.
-        if (!std::getline(std::cin, line)) {
-            // std::cerr adalah saluran keluaran khusus pesan kesalahan, terpisah dari std::cout.
-            std::cerr << "\nInput berakhir sebelum data lengkap. Program dihentikan.\n";
-            std::exit(EXIT_FAILURE);  // hentikan program dengan kode gagal ke sistem operasi
-        }
-        return line;
+    std::string readLine(std::string_view prompt) { // readLine(std::string_view prompt) berfungsi untuk menampilkan prompt (teks pertanyaan, dicetak tebal) lalu membaca satu baris ketikan pengguna;
+    // ini dasar dari semua pembaca input di bawah. Hasilnya std::string.
+        std::string line;  // line menampung satu baris ketikan; panjangnya tidak pasti, jadi std::string.
+        std::cout << colorize(ANSI_BOLD, prompt);  // colorize(ANSI_BOLD, prompt) mencetak prompt tebal supaya pertanyaan mudah dibedakan dari keterangan.
+        // std::getline berfungsi untuk membaca satu baris ketikan utuh sampai Enter, termasuk spasi. Dipakai, bukan std::cin >>, karena seluruh baris perlu diperiksa: cin >> berhenti di spasi atau
+        // di karakter yang bukan angka (misalnya 2.5 terbaca 2), dan sisa ketikannya tertinggal lalu ikut terbaca oleh pertanyaan berikutnya.
+        if (!std::getline(std::cin, line)) { // !std::getline(std::cin, line) artinya pembacaan dari std::cin (masukan keyboard) gagal karena input sudah ditutup: pengguna menekan Ctrl+D (macOS/Linux)
+        // atau Ctrl+Z lalu Enter (Windows), atau input dialihkan dari berkas dan isinya sudah habis. Tanpa pemeriksaan ini, pertanyaan yang sama akan diulang tanpa henti.
+            // std::cerr berfungsi untuk mencetak pesan galat lewat saluran khusus yang terpisah dari std::cout.
+            std::cerr << "\nInput berakhir sebelum data lengkap. Program dihentikan.\n"; // "\nInput berakhir sebelum data lengkap. Program dihentikan.\n" adalah pesan bahwa input sudah habis; \n di dalam string berarti pindah baris.
+            // std::exit berfungsi untuk menghentikan seluruh program saat itu juga, dari fungsi mana pun.
+            std::exit(EXIT_FAILURE);  // std::exit(EXIT_FAILURE) artinya hentikan program dengan kode keluar EXIT_FAILURE ("gagal") ke sistem operasi.
+        } // akhir penanganan input yang berakhir
+        return line; // return line; mengembalikan baris ketikan apa adanya; perapian spasi dilakukan normalizeSpaces() di bawah.
     }  // akhir fungsi readLine()
 
-    // Ketikan pengguna sering membawa spasi tak sengaja. Fungsi ini membuang spasi/tab di awal dan akhir
-    // ("  Budi  " menjadi "Budi") dan merapatkan spasi beruntun di tengah menjadi satu spasi.
-    // Dipakai oleh semua pembaca input di bawah.
-    std::string normalizeSpaces(const std::string& text) {
-        std::string result;  // teks yang sudah dirapikan
-        bool pendingSpace = false;  // ada spasi yang belum ditulis?
-        for (const char c : text) {  // periksa setiap karakter satu per satu
-            // Spasi, tab ('\t'), atau CR ('\r', sisa akhir baris Windows) tidak langsung ditulis, hanya ditandai.
-            if (c == ' ' || c == '\t' || c == '\r') {
-                pendingSpace = !result.empty();  // true hanya bila result sudah berisi: spasi di awal diabaikan
-            } else {
-                if (pendingSpace) result += ' ';  // spasi beruntun ditulis sebagai satu spasi saja
-                result += c;  // += menambahkan c ke akhir result
-                pendingSpace = false;
-            }
-        }  // akhir for
-        return result;  // spasi di akhir otomatis terbuang: tidak pernah ditulis
+    std::string normalizeSpaces(const std::string& text) { // normalizeSpaces(const std::string& text) berfungsi untuk membuang spasi/tab di awal dan akhir ("  Budi  " menjadi "Budi") dan merapatkan
+    // spasi beruntun di tengah menjadi satu spasi, karena ketikan pengguna sering membawa spasi tak sengaja. Dipakai oleh semua pembaca input di bawah.
+        std::string result;  // result adalah teks yang sudah dirapikan, mula-mula kosong.
+        bool pendingSpace = false;  // pendingSpace = false artinya belum ada spasi yang menunggu untuk ditulis.
+        for (const char c : text) {  // for (const char c : text) artinya periksa setiap karakter c di text satu per satu.
+            if (c == ' ' || c == '\t' || c == '\r') { // c == ' ' || c == '\t' || c == '\r' artinya karakter ini spasi, tab ('\t'), atau CR ('\r', sisa akhir baris Windows): tidak langsung ditulis, hanya ditandai.
+                pendingSpace = !result.empty();  // !result.empty() artinya true hanya bila result sudah berisi; jadi spasi di awal teks diabaikan. empty() bernilai true bila panjangnya 0.
+            } else { // else artinya karakter ini bukan spasi.
+                if (pendingSpace) result += ' ';  // if (pendingSpace) result += ' '; artinya spasi beruntun yang tertunda ditulis sebagai satu spasi saja.
+                result += c;  // result += c; menambahkan karakter c ke akhir result.
+                pendingSpace = false; // pendingSpace = false; artinya spasi yang tertunda sudah selesai ditangani.
+            } // akhir cabang bukan spasi
+        }  // akhir perulangan setiap karakter
+        return result;  // return result; mengembalikan teks rapi; spasi di akhir otomatis terbuang karena tidak pernah ditulis.
     }  // akhir fungsi normalizeSpaces()
 
-    // Apakah teks hanya berisi angka 0-9, tanpa tanda, titik, huruf, atau spasi? Dipakai oleh
-    // isDecimalFormat() dan readInteger() di bawah.
-    bool isAllDigits(const std::string& text) {
-        if (text.empty()) return false;  // teks kosong bukan bilangan (empty() = true bila panjangnya 0)
-        for (const char c : text) {
-            // std::isdigit hanya aman untuk nilai 0-255, sedangkan char bisa negatif untuk byte non-ASCII;
-            // static_cast<unsigned char> mengubahnya dulu.
-            if (!std::isdigit(static_cast<unsigned char>(c))) return false;
-        }
-        return true;  // semua karakter lolos
-    }
+    bool isAllDigits(const std::string& text) { // isAllDigits(const std::string& text) berfungsi untuk memeriksa apakah teks hanya berisi angka 0-9, tanpa tanda, titik, huruf, atau spasi.
+    // Dipakai oleh isDecimalFormat() dan readInteger() di bawah.
+        if (text.empty()) return false;  // text.empty() artinya teks kosong; teks kosong bukan bilangan, jadi hasilnya false.
+        for (const char c : text) { // for (const char c : text) artinya periksa setiap karakter c di text.
+            if (!std::isdigit(static_cast<unsigned char>(c))) return false; // !std::isdigit(static_cast<unsigned char>(c)) artinya c bukan digit, jadi langsung false; static_cast dipakai karena std::isdigit
+            // hanya aman untuk nilai 0-255, sedangkan char bisa negatif untuk byte non-ASCII.
+        } // akhir perulangan setiap karakter
+        return true;  // return true; artinya semua karakter lolos sebagai digit.
+    } // akhir fungsi isAllDigits()
 
-    // Apakah teks berbentuk bilangan desimal yang kita harapkan? Yaitu angka, boleh diikuti SATU pemisah
-    // titik atau koma lalu angka lagi: 87, 87.5, atau 87,5. Bentuk lain seperti 1e2, +5, .5, 5., 8.7.5, atau
-    // 87 5 ditolak, dikarenakan bukan cara menulis nilai yang wajar. Dipakai oleh parseDecimal() di bawah.
-    bool isDecimalFormat(const std::string& text) {
-        // auto = tipenya ditentukan compiler dari nilainya (di sini std::size_t). find_first_of(".,") mencari
-        // posisi titik atau koma pertama; hasilnya std::string::npos bila tidak ada.
-        const auto separator = text.find_first_of(".,");
-        if (separator == std::string::npos) return isAllDigits(text);  // tanpa pemisah: harus seluruhnya digit
-        // Bagian sebelum pemisah (substr(0, separator)) dan sesudahnya (substr(separator + 1)) harus digit
-        // semua; pemisah kedua otomatis tertolak dikarenakan ikut berada di bagian sesudahnya.
-        return isAllDigits(text.substr(0, separator))
-            && isAllDigits(text.substr(separator + 1));
-    }
+    bool isDecimalFormat(const std::string& text) { // isDecimalFormat(const std::string& text) berfungsi untuk memeriksa apakah teks berbentuk bilangan desimal yang wajar: angka, boleh diikuti SATU pemisah
+    // titik atau koma lalu angka lagi (87, 87.5, atau 87,5). Bentuk lain seperti 1e2, +5, .5, 5., 8.7.5, atau 87 5 ditolak. Dipakai oleh parseDecimal() di bawah.
+        // auto berfungsi untuk membiarkan compiler menentukan tipe variabel sendiri dari nilainya; di sini tipenya std::size_t.
+        const auto separator = text.find_first_of(".,"); // text.find_first_of(".,") mencari posisi titik atau koma pertama; hasilnya std::string::npos bila tidak ada.
+        if (separator == std::string::npos) return isAllDigits(text);  // separator == std::string::npos artinya tanpa pemisah, jadi teks harus seluruhnya digit.
+        return isAllDigits(text.substr(0, separator)) // isAllDigits(text.substr(0, separator)) artinya bagian sebelum pemisah harus digit semua,
+            && isAllDigits(text.substr(separator + 1)); // && isAllDigits(text.substr(separator + 1)); artinya bagian sesudah pemisah juga; pemisah kedua otomatis tertolak karena ikut berada di bagian sesudahnya.
+    } // akhir fungsi isDecimalFormat()
 
-    // Byte acak seperti 0xFF bukan huruf dan bukan UTF-8, jadi harus ditolak; huruf seperti é atau ö (UTF-8
-    // sah) tetap diterima. Fungsi ini memeriksa aturannya: setiap karakter non-ASCII terdiri dari satu byte
-    // awal (0xC2-0xF4) diikuti 1-3 byte lanjutan (0x80-0xBF). Dipakai oleh dua pemeriksa nama di bawah.
-    bool isValidUtf8(const std::string& text) {
-        std::size_t i = 0;  // indeks byte yang sedang diperiksa
-        while (i < text.size()) {  // selama masih ada byte yang belum diperiksa (size() = jumlah byte)
-            const unsigned char lead = static_cast<unsigned char>(text[i]);  // byte dibaca sebagai 0-255
-            std::size_t extra = 0;  // jumlah byte lanjutan yang harus mengikuti
-            // Rentang byte awal menentukan panjang karakter.
-            if (lead < 0x80)                       extra = 0;    // ASCII biasa
-            else if (lead >= 0xC2 && lead <= 0xDF) extra = 1;    // 2 byte, mis. é ö ü
-            else if (lead >= 0xE0 && lead <= 0xEF) extra = 2;    // 3 byte, mis. aksara Asia
-            else if (lead >= 0xF0 && lead <= 0xF4) extra = 3;    // 4 byte, mis. emoji
-            else return false;                                   // 0x80-0xC1 dan 0xF5-0xFF bukan byte awal sah
-            if (i + extra >= text.size()) return false;  // byte lanjutan terpotong di akhir teks
-            for (std::size_t k = 1; k <= extra; ++k) {  // periksa setiap byte lanjutan
-                const unsigned char cont = static_cast<unsigned char>(text[i + k]);
-                if (cont < 0x80 || cont > 0xBF) return false;  // byte lanjutan harus 10xxxxxx
-            }
-            i += extra + 1;  // lompat ke byte awal karakter berikutnya
-        }  // akhir while
-        return true;
+    bool isValidUtf8(const std::string& text) { // isValidUtf8(const std::string& text) berfungsi untuk memeriksa apakah teks berisi UTF-8 yang sah: setiap karakter non-ASCII terdiri dari satu byte awal (0xC2-0xF4)
+    // diikuti 1-3 byte lanjutan (0x80-0xBF). Byte acak seperti 0xFF bukan huruf dan bukan UTF-8, jadi ditolak; huruf seperti é atau ö tetap diterima. Dipakai oleh dua pemeriksa nama di bawah.
+        std::size_t i = 0;  // i = 0 adalah indeks byte yang sedang diperiksa, mulai dari 0.
+        while (i < text.size()) {  // while (i < text.size()) artinya ulangi selama masih ada byte yang belum diperiksa; size() = jumlah byte.
+            const unsigned char lead = static_cast<unsigned char>(text[i]);  // lead adalah byte ke-i dibaca sebagai 0-255; ia calon byte awal sebuah karakter.
+            std::size_t extra = 0;  // extra = 0 adalah jumlah byte lanjutan yang harus mengikuti; nilainya ditentukan dari rentang lead di bawah.
+            if (lead < 0x80)                       extra = 0;    // lead < 0x80 artinya ASCII biasa: tanpa byte lanjutan.
+            else if (lead >= 0xC2 && lead <= 0xDF) extra = 1;    // lead >= 0xC2 && lead <= 0xDF artinya karakter 2 byte, misalnya é ö ü.
+            else if (lead >= 0xE0 && lead <= 0xEF) extra = 2;    // lead >= 0xE0 && lead <= 0xEF artinya karakter 3 byte, misalnya aksara Asia.
+            else if (lead >= 0xF0 && lead <= 0xF4) extra = 3;    // lead >= 0xF0 && lead <= 0xF4 artinya karakter 4 byte, misalnya emoji.
+            else return false;                                   // else return false; artinya 0x80-0xC1 dan 0xF5-0xFF bukan byte awal yang sah.
+            if (i + extra >= text.size()) return false;  // i + extra >= text.size() artinya byte lanjutan terpotong di akhir teks, jadi tidak sah.
+            for (std::size_t k = 1; k <= extra; ++k) {  // for (std::size_t k = 1; k <= extra; ++k) artinya periksa setiap byte lanjutan ke-1 sampai ke-extra.
+                const unsigned char cont = static_cast<unsigned char>(text[i + k]); // cont adalah byte lanjutan ke-k setelah lead, dibaca sebagai 0-255.
+                if (cont < 0x80 || cont > 0xBF) return false;  // cont < 0x80 || cont > 0xBF artinya byte lanjutan di luar pola 10xxxxxx, jadi tidak sah.
+            } // akhir perulangan byte lanjutan
+            i += extra + 1;  // i += extra + 1; artinya i = i + (extra + 1): pada angka, += menambah nilai variabel; di sini i lompat ke byte awal karakter berikutnya.
+        }  // akhir perulangan while
+        return true; // return true; artinya seluruh teks lolos sebagai UTF-8 sah.
     }  // akhir fungsi isValidUtf8()
 
-    // Apakah teks layak jadi nama mata kuliah? Syaratnya tiga. Harus mengandung huruf. Hanya boleh berisi
-    // huruf, angka (Kalkulus 2), spasi, dan tanda titik, koma, &, /, kurung, tanda hubung, atau petik.
-    // Tidak lebih panjang dari COURSE_NAME_MAX_LENGTH. Dipakai oleh readCourseName() di bawah.
-    bool isValidCourseName(const std::string& text) {
-        // Tiga alasan gugur langsung: kosong, lebih dari COURSE_NAME_MAX_LENGTH kolom, atau bukan UTF-8 sah.
-        if (text.empty() || displayWidth(text) > COURSE_NAME_MAX_LENGTH || !isValidUtf8(text)) return false;
-        bool hasLetter = false;  // sudah ada minimal satu huruf?
-        for (const char c : text) {
-            const unsigned char uc = static_cast<unsigned char>(c);  // 0-255 supaya aman untuk isalpha/isdigit
-            // std::isalpha hanya mengenal ASCII, jadi byte >= 0x80 (bagian huruf UTF-8 seperti é, ö) kita
-            // anggap huruf juga. Huruf: tandai hasLetter, lanjut ke karakter berikutnya.
-            if (std::isalpha(uc) || uc >= 0x80) { hasLetter = true; continue; }
-            // Angka atau salah satu tanda yang diizinkan: lewati. '\'' adalah karakter petik tunggal.
-            if (std::isdigit(uc) || c == ' ' || c == '.' || c == ',' || c == '&' || c == '/'
-                || c == '(' || c == ')' || c == '-' || c == '\'') continue;
-            return false;  // karakter lain (mis. #, @, !) bukan bagian nama mata kuliah
-        }  // akhir for
-        return hasLetter;  // "123" ditolak: tidak mengandung huruf sama sekali
+    bool isValidCourseName(const std::string& text) { // isValidCourseName(const std::string& text) berfungsi untuk memeriksa apakah teks layak jadi nama mata kuliah: harus mengandung huruf; hanya boleh berisi huruf,
+    // angka (Kalkulus 2), spasi, dan tanda titik, koma, &, /, kurung, tanda hubung, atau petik; tidak lebih panjang dari COURSE_NAME_MAX_LENGTH. Dipakai oleh readCourseName() di bawah.
+        if (text.empty() || displayWidth(text) > COURSE_NAME_MAX_LENGTH || !isValidUtf8(text)) return false; // text.empty() || displayWidth(text) > COURSE_NAME_MAX_LENGTH || !isValidUtf8(text) artinya tiga alasan gugur langsung:
+        // kosong, lebih dari COURSE_NAME_MAX_LENGTH (60) kolom, atau bukan UTF-8 sah.
+        bool hasLetter = false;  // hasLetter = false artinya belum ditemukan satu huruf pun.
+        for (const char c : text) { // for (const char c : text) artinya periksa setiap karakter c di text.
+            const unsigned char uc = static_cast<unsigned char>(c);  // uc adalah c dalam bentuk 0-255 supaya aman untuk std::isalpha dan std::isdigit.
+            if (std::isalpha(uc) || uc >= 0x80) { hasLetter = true; continue; } // std::isalpha(uc) || uc >= 0x80 artinya huruf: std::isalpha hanya mengenal ASCII, jadi byte >= 0x80 (bagian huruf UTF-8 seperti é, ö)
+            // dianggap huruf juga; tandai hasLetter, lalu lanjut ke karakter berikutnya.
+            if (std::isdigit(uc) || c == ' ' || c == '.' || c == ',' || c == '&' || c == '/' // std::isdigit(uc) || c == ' ' || ... artinya angka atau salah satu tanda yang diizinkan,
+                || c == '(' || c == ')' || c == '-' || c == '\'') continue; // || c == '(' || c == ')' || c == '-' || c == '\'' melengkapi daftar tanda yang diizinkan ('\'' adalah karakter petik tunggal), lalu lewati.
+            return false;  // return false; artinya karakter lain (misalnya #, @, !) bukan bagian nama mata kuliah.
+        }  // akhir perulangan setiap karakter
+        return hasLetter;  // return hasLetter; artinya sah hanya bila ada huruf; "123" ditolak karena tidak mengandung huruf sama sekali.
     }  // akhir fungsi isValidCourseName()
 
-    // Meminta nama mata kuliah, dan mengulang pertanyaannya sampai lolos isValidCourseName() di atas.
+    std::string readCourseName(std::string_view prompt) { // readCourseName(std::string_view prompt) berfungsi untuk meminta nama mata kuliah dan mengulang pertanyaannya sampai lolos isValidCourseName() di atas.
     // Dipanggil oleh run() di BAGIAN 6.
-    std::string readCourseName(std::string_view prompt) {
-        while (true) {  // ulang terus sampai input sah; keluar lewat return
-            const std::string text = normalizeSpaces(readLine(prompt));  // const: hasilnya tidak diubah lagi
-            if (isValidCourseName(text)) return text;
-            // Pesan kesalahan disusun dari potongan teks: std::to_string mengubah angka batas menjadi teks,
-            // dan + menyambungnya. Dua teks literal (teks di antara tanda kutip ganda) yang berdampingan
-            // otomatis digabung compiler menjadi satu.
-            printError("  [!] Nama Mata Kuliah harus mengandung huruf dan hanya boleh berisi huruf, angka, spasi,"
-                                        " atau tanda . , & / ( ) - ' (maksimal " + std::to_string(COURSE_NAME_MAX_LENGTH)
-                                        + " karakter). Silakan ulangi.");
-        }  // akhir while
+        // while (true) berfungsi untuk mengulang tanpa henti, karena syaratnya selalu benar; jalan keluarnya hanya lewat return.
+        while (true) {  // while (true) { artinya tanya terus sampai input sah.
+            const std::string text = normalizeSpaces(readLine(prompt));  // normalizeSpaces(readLine(prompt)) membaca satu baris lalu merapikan spasinya; const artinya text tidak diubah lagi.
+            if (isValidCourseName(text)) return text; // isValidCourseName(text) artinya teks sah, jadi langsung dikembalikan sebagai hasil.
+            // std::to_string berfungsi untuk mengubah angka menjadi teks, supaya bisa disambung dengan + ke teks lain.
+            printError("  [!] Nama Mata Kuliah harus mengandung huruf dan hanya boleh berisi huruf, angka, spasi," // printError("  [!] Nama Mata Kuliah harus ... adalah pesan kesalahan; teksnya dipecah ke tiga baris. Teks literal di baris ini dan di awal baris berikutnya berdampingan tanpa +, jadi digabung compiler menjadi satu.
+                                        " atau tanda . , & / ( ) - ' (maksimal " + std::to_string(COURSE_NAME_MAX_LENGTH) // " atau tanda . , & / ( ) - ' (maksimal " + std::to_string(COURSE_NAME_MAX_LENGTH) menyambung batas 60 sebagai teks;
+                                        + " karakter). Silakan ulangi."); // + " karakter). Silakan ulangi."); menyambung ujung pesan dengan +, lalu ) menutup pemanggilan printError().
+        }  // akhir perulangan while (true)
     }  // akhir fungsi readCourseName()
 
-    // Apakah teks layak jadi nama orang? Hanya huruf, spasi, titik (A. Rizky), tanda hubung (Anne-Marie),
-    // atau tanda petik (Nur'aini); harus diawali huruf dan tidak terlalu panjang. Dengan ini ketikan seperti
-    // "Luthfi 87.5" atau "123" ditolak, dikarenakan angka dan simbol bukan bagian nama.
+    bool isValidPersonName(const std::string& name) { // isValidPersonName(const std::string& name) berfungsi untuk memeriksa apakah teks layak jadi nama orang: hanya huruf, spasi, titik (A. Rizky), tanda hubung
+    // (Anne-Marie), atau tanda petik (Nur'aini); harus diawali huruf dan tidak terlalu panjang. Ketikan seperti "Luthfi 87.5" atau "123" ditolak, karena angka dan simbol bukan bagian nama.
     // Dipakai oleh readPersonName() di bawah.
-    bool isValidPersonName(const std::string& name) {
-        // Tiga alasan gugur langsung: kosong, lebih dari NAME_MAX_LENGTH kolom, atau bukan UTF-8 sah.
-        if (name.empty() || displayWidth(name) > NAME_MAX_LENGTH || !isValidUtf8(name)) return false;
-        // name.front() = karakter pertama. Ia harus huruf: ASCII (lolos isalpha) atau UTF-8 (>= 0x80).
-        const unsigned char first = static_cast<unsigned char>(name.front());
-        if (!std::isalpha(first) && first < 0x80) return false;
-        for (const char c : name) {
-            const unsigned char uc = static_cast<unsigned char>(c);  // 0-255 supaya aman untuk std::isalpha
-            const bool isLetter = std::isalpha(uc) != 0 || uc >= 0x80;  // >= 0x80: huruf UTF-8 non-ASCII
-            const bool isAllowedMark = (c == ' ' || c == '.' || c == '-' || c == '\'');  // tanda yang diizinkan
-            if (!isLetter && !isAllowedMark) return false;  // angka atau simbol lain: bukan nama
-        }  // akhir for
-        return true;
+        if (name.empty() || displayWidth(name) > NAME_MAX_LENGTH || !isValidUtf8(name)) return false; // name.empty() || displayWidth(name) > NAME_MAX_LENGTH || !isValidUtf8(name) artinya tiga alasan gugur langsung:
+        // kosong, lebih dari NAME_MAX_LENGTH (60) kolom, atau bukan UTF-8 sah.
+        const unsigned char first = static_cast<unsigned char>(name.front());  // name.front() adalah karakter pertama; first menyimpannya dalam bentuk 0-255.
+        if (!std::isalpha(first) && first < 0x80) return false; // !std::isalpha(first) && first < 0x80 artinya karakter pertama bukan huruf ASCII dan bukan byte UTF-8, jadi nama tidak diawali huruf: tolak.
+        for (const char c : name) { // for (const char c : name) artinya periksa setiap karakter c di name.
+            const unsigned char uc = static_cast<unsigned char>(c);  // uc adalah c dalam bentuk 0-255 supaya aman untuk std::isalpha.
+            const bool isLetter = std::isalpha(uc) != 0 || uc >= 0x80;  // isLetter artinya c huruf ASCII (std::isalpha bukan 0) atau byte UTF-8 (>= 0x80) dari huruf non-ASCII.
+            const bool isAllowedMark = (c == ' ' || c == '.' || c == '-' || c == '\'');  // isAllowedMark artinya c salah satu tanda yang diizinkan: spasi, titik, tanda hubung, atau petik tunggal.
+            if (!isLetter && !isAllowedMark) return false;  // !isLetter && !isAllowedMark artinya angka atau simbol lain: bukan nama, jadi tolak.
+        }  // akhir perulangan setiap karakter
+        return true; // return true; artinya semua karakter lolos.
     }  // akhir fungsi isValidPersonName()
 
-    // Meminta nama mahasiswa, dan mengulang pertanyaannya sampai lolos isValidPersonName() di atas.
+    std::string readPersonName(std::string_view prompt) { // readPersonName(std::string_view prompt) berfungsi untuk meminta nama mahasiswa dan mengulang pertanyaannya sampai lolos isValidPersonName() di atas.
     // Dipanggil oleh run() di BAGIAN 6.
-    std::string readPersonName(std::string_view prompt) {
-        while (true) {  // ulang terus sampai nama sah; keluar lewat return
-            const std::string name = normalizeSpaces(readLine(prompt));  // baca satu baris, rapikan spasinya
-            if (isValidPersonName(name)) return name;
-            // Pesan kesalahan: std::to_string mengubah batas menjadi teks, + menyambung potongannya.
-            printError("  [!] Nama hanya boleh berisi huruf, spasi, titik, tanda hubung (-), atau tanda petik ('),"
-                                        " diawali huruf, maksimal " + std::to_string(NAME_MAX_LENGTH)
-                                        + " karakter. Silakan ulangi.");
-        }  // akhir while
+        while (true) {  // while (true) { artinya tanya terus sampai nama sah; keluar lewat return.
+            const std::string name = normalizeSpaces(readLine(prompt));  // normalizeSpaces(readLine(prompt)) membaca satu baris lalu merapikan spasinya.
+            if (isValidPersonName(name)) return name; // isValidPersonName(name) artinya nama sah, jadi langsung dikembalikan.
+            printError("  [!] Nama hanya boleh berisi huruf, spasi, titik, tanda hubung (-), atau tanda petik ('),"  // printError("  [!] Nama hanya boleh berisi huruf, ... adalah pesan kesalahan yang dipecah ke tiga baris;
+                                        " diawali huruf, maksimal " + std::to_string(NAME_MAX_LENGTH) // " diawali huruf, maksimal " + std::to_string(NAME_MAX_LENGTH) menyambung batas 60 sebagai teks;
+                                        + " karakter. Silakan ulangi."); // + " karakter. Silakan ulangi."); menutup pesan.
+        }  // akhir perulangan while (true)
     }  // akhir fungsi readPersonName()
 
-    // Meminta bilangan bulat dari minValue sampai maxValue (keduanya termasuk); di program ini dipakai untuk
-    // jumlah mahasiswa. Dipanggil oleh run() di BAGIAN 6.
-    int readInteger(std::string_view prompt, int minValue, int maxValue) {
-        while (true) {  // ulang terus sampai input sah
-            // Kenapa dibaca sebagai teks dulu, bukan langsung std::cin >> angka? Dikarenakan bila std::cin >>
-            // angka menerima huruf, std::cin masuk keadaan gagal dan menolak semua input berikutnya sampai
-            // dipulihkan dengan std::cin.clear(). Lewat teks, ketikan salah (abc, 2.5) ditolak dengan aman.
-            const std::string text = normalizeSpaces(readLine(prompt));
-            // istringstream adalah aliran (stream) masukan dari teks: kita membaca darinya dengan >>,
-            // persis seperti membaca dari std::cin.
-            std::istringstream parser(text);
-            int number = 0;  // 0 supaya tidak berisi nilai acak
-            // Angkanya sah bila lolos lima pemeriksaan yang dirangkai dengan && (semuanya harus benar):
-            // 1. isAllDigits(text): hanya digit 0-9, jadi +3, 3.0, 1e3, dan "3 orang" tertolak.
-            // 2. parser >> number: >> mengambil angka dari parser ke number; gagal bila tidak bisa,
-            //    misalnya angkanya terlalu besar untuk int.
-            // 3. (parser >> std::ws).eof(): std::ws membuang spasi sisa, eof() true bila tidak ada sisa lagi.
-            // 4-5. number >= minValue dan number <= maxValue: angkanya masih di dalam rentang.
-            if (isAllDigits(text) && parser >> number && (parser >> std::ws).eof() && number >= minValue && number <= maxValue) {
-                return number;
-            }
-            // Pesan kesalahan: std::to_string mengubah batas menjadi teks, + menyambung potongannya.
-            printError("  [!] Harus bilangan bulat " + std::to_string(minValue) + "-" + std::to_string(maxValue)
-                                        + " (hanya angka). Silakan ulangi.");
-        }  // akhir while
+    int readInteger(std::string_view prompt, int minValue, int maxValue) { // readInteger(std::string_view prompt, int minValue, int maxValue) berfungsi untuk meminta bilangan bulat dari minValue sampai maxValue
+    // (keduanya termasuk); di program ini dipakai untuk jumlah mahasiswa. Dipanggil oleh run() di BAGIAN 6.
+        while (true) {  // while (true) { artinya tanya terus sampai input sah.
+            const std::string text = normalizeSpaces(readLine(prompt)); // normalizeSpaces(readLine(prompt)) membaca ketikan sebagai teks dulu, bukan langsung std::cin >> angka, karena bila std::cin >> angka
+            // menerima huruf, std::cin masuk keadaan gagal dan menolak semua input berikutnya sampai dipulihkan dengan std::cin.clear(). Lewat teks, ketikan salah (abc, 2.5) ditolak dengan aman.
+            // std::istringstream adalah aliran (stream) masukan dari teks: kita membaca darinya dengan >>, persis seperti membaca dari std::cin.
+            std::istringstream parser(text); // parser(text) adalah aliran yang isinya teks ketikan, siap dibaca sebagai angka.
+            int number = 0;  // number = 0 adalah tempat angka hasil baca; diberi 0 supaya tidak berisi nilai acak.
+            // >> pada aliran berfungsi untuk mengambil nilai dari aliran ke variabel; hasilnya gagal bila teksnya tidak bisa dibaca sebagai tipe itu.
+            if (isAllDigits(text) && parser >> number && (parser >> std::ws).eof() && number >= minValue && number <= maxValue) { // isAllDigits(text) && parser >> number && (parser >> std::ws).eof() && ... artinya
+            // sah bila lolos lima pemeriksaan: hanya digit 0-9 (jadi +3, 3.0, 1e3, dan "3 orang" tertolak); angkanya terbaca (gagal bila terlalu besar untuk int);
+            // std::ws membuang spasi sisa dan eof() true bila tidak ada sisa lagi; number >= minValue; dan number <= maxValue.
+                return number; // return number; mengembalikan angka yang sah.
+            } // akhir pemeriksaan angka yang sah
+            printError("  [!] Harus bilangan bulat " + std::to_string(minValue) + "-" + std::to_string(maxValue) // printError("  [!] Harus bilangan bulat " + std::to_string(minValue) + "-" + std::to_string(maxValue) menyusun pesan dengan batas minValue-maxValue sebagai teks (di program ini 1-1000, dari pemanggilan di run() BAGIAN 6),
+                                        + " (hanya angka). Silakan ulangi."); // + " (hanya angka). Silakan ulangi."); menutup pesan.
+        }  // akhir perulangan while (true)
     }  // akhir fungsi readInteger()
 
-    // Mengubah teks menjadi bilangan desimal. Hasilnya bool: true bila teksnya sah. Angkanya sendiri dikirim
-    // lewat parameter double& result, referensi ke variabel milik pemanggil, dikarenakan nilai kembalian
-    // sudah dipakai untuk status sah/tidak. Parameter text adalah salinan, jadi boleh diubah di dalam fungsi.
-    // Dipakai oleh readDecimal() di bawah.
-    bool parseDecimal(std::string text, double& result) {
-        if (!isDecimalFormat(text)) return false;  // format diperiksa dulu: hanya tulisan angka yang diterima
-        // C++ hanya mengenal penulisan 87.5, jadi koma diganti titik. char& (referensi) mengubah karakter
-        // langsung pada teksnya.
-        for (char& c : text) {
-            if (c == ',') c = '.';
-        }  // akhir for
-        std::istringstream parser(text);  // untuk membaca angka dari teks
-        // parser >> result membaca angka desimal ke result; (parser >> std::ws).eof() memastikan tidak ada sisa.
-        return (parser >> result) && (parser >> std::ws).eof();
-    }
+    // double& adalah referensi ke variabel double milik pemanggil: fungsi menulis langsung ke variabel itu, bukan ke salinannya.
+    bool parseDecimal(std::string text, double& result) { // parseDecimal(std::string text, double& result) berfungsi untuk mengubah teks menjadi bilangan desimal; hasilnya true bila teksnya sah, dan angkanya
+    // dikirim lewat result, karena nilai kembalian sudah dipakai untuk status sah/tidak. Parameter text adalah salinan, jadi boleh diubah di dalam fungsi. Dipakai oleh readDecimal() di bawah.
+        if (!isDecimalFormat(text)) return false;  // !isDecimalFormat(text) artinya format diperiksa dulu: bukan tulisan angka yang wajar, jadi false.
+        // char& adalah referensi ke satu karakter di dalam teks, jadi mengubah c berarti mengubah karakter itu langsung pada teksnya.
+        for (char& c : text) { // for (char& c : text) artinya kunjungi setiap karakter text dan boleh mengubahnya.
+            if (c == ',') c = '.'; // c == ',' artinya koma; diganti titik karena C++ hanya mengenal penulisan 87.5.
+        }  // akhir perulangan mengganti koma
+        std::istringstream parser(text);  // parser(text) adalah aliran untuk membaca angka dari teks.
+        return (parser >> result) && (parser >> std::ws).eof(); // (parser >> result) membaca angka desimal ke result, dan (parser >> std::ws).eof() memastikan tidak ada sisa; keduanya harus benar.
+    } // akhir fungsi parseDecimal()
 
-    // Meminta nilai desimal dari minValue sampai maxValue (keduanya termasuk); koma (87,5) diterima.
-    // Dipanggil oleh run() di BAGIAN 6 untuk nilai mahasiswa.
-    double readDecimal(std::string_view prompt, double minValue, double maxValue) {
-        while (true) {  // ulang terus sampai nilai sah; keluar lewat return
-            double score = 0.0;  // nilai awal yang jelas
-            // parseDecimal() mengisi score lewat referensi dan mengembalikan true bila teks sah; && lalu
-            // memastikan score berada dalam rentang.
-            if (parseDecimal(normalizeSpaces(readLine(prompt)), score) && score >= minValue && score <= maxValue) {
-                return score;
-            }
-            // Batas ingin tampil "0-100", bukan "0.000000-100.000000"; std::to_string untuk double selalu
-            // menulis 6 angka desimal. Jadi kita susun lewat std::ostringstream, aliran keluaran ke teks
-            // (menyusun teks dari angka): << menulis angka dan "-" ke dalamnya, str() mengambil hasilnya.
-            std::ostringstream range;
-            range << minValue << "-" << maxValue;
-            printError("  [!] Nilai harus angka " + range.str() + ", hanya digit dengan satu pemisah desimal"
-                                        " (mis. 87.5 atau 87,5). Silakan ulangi.");
-        }  // akhir while
+    double readDecimal(std::string_view prompt, double minValue, double maxValue) { // readDecimal(std::string_view prompt, double minValue, double maxValue) berfungsi untuk meminta nilai desimal dari minValue
+    // sampai maxValue (keduanya termasuk); koma (87,5) diterima. Dipanggil oleh run() di BAGIAN 6 untuk nilai mahasiswa.
+        while (true) {  // while (true) { artinya tanya terus sampai nilai sah; keluar lewat return.
+            double score = 0.0;  // score = 0.0 adalah tempat nilai hasil baca, dengan nilai awal yang jelas.
+            if (parseDecimal(normalizeSpaces(readLine(prompt)), score) && score >= minValue && score <= maxValue) { // parseDecimal(normalizeSpaces(readLine(prompt)), score) mengisi score lewat referensi dan
+            // mengembalikan true bila teks sah; && score >= minValue && score <= maxValue lalu memastikan score berada di antara minValue dan maxValue (di program ini 0-100).
+                return score; // return score; mengembalikan nilai yang sah.
+            } // akhir pemeriksaan nilai yang sah
+            // std::ostringstream adalah aliran keluaran ke teks: << menulis angka dan teks ke dalamnya, dan str() mengambil hasilnya sebagai std::string.
+            std::ostringstream range; // range adalah aliran untuk menyusun teks batas, karena std::to_string untuk double selalu menulis 6 angka desimal ("0.000000-100.000000"), padahal kita ingin "0-100".
+            range << minValue << "-" << maxValue; // range << minValue << "-" << maxValue; menulis batas bawah, tanda "-", lalu batas atas ke dalam range.
+            printError("  [!] Nilai harus angka " + range.str() + ", hanya digit dengan satu pemisah desimal" // printError("  [!] Nilai harus angka " + range.str() + ... menyambung pesan dengan teks batas dari range.str();
+                                        " (mis. 87.5 atau 87,5). Silakan ulangi."); // " (mis. 87.5 atau 87,5). Silakan ulangi."); menutup pesan; dua teks literal berdampingan digabung compiler.
+        }  // akhir perulangan while (true)
     }  // akhir fungsi readDecimal()
 
     // ===== BAGIAN 5: JUDUL, PETUNJUK, DAN TABEL REKAP =====
-    // Bagian ini mengurus tampilan: judul program, kotak petunjuk, dan bahan tabel rekap (satu baris
-    // tabel dan angka 2 desimal). Isinya hanya menyusun dan mencetak; semua pembaca input ada di BAGIAN 4.
+    // Bagian ini mengurus tampilan: judul program, kotak petunjuk, dan bahan tabel rekap (satu baris tabel dan angka 2 desimal).
+    // Isinya hanya menyusun dan mencetak; semua pembaca input ada di BAGIAN 4.
 
-    // Mencetak judul program (cyan tebal) di antara dua garis '=' buatan printRule() (BAGIAN 3).
+    void printTitle(std::string_view text) { // printTitle(std::string_view text) berfungsi untuk mencetak judul program (cyan tebal) di antara dua garis '=' buatan printRule() (BAGIAN 3). Dipanggil oleh run() di BAGIAN 6.
+        std::cout << '\n';  // std::cout << '\n'; mencetak satu baris kosong sebelum judul.
+        printRule('='); // printRule('='); mencetak garis '=' sepanjang 60 karakter di atas judul.
+        std::cout << colorize(ANSI_TITLE, "  " + std::string(text)) << '\n';  // colorize(ANSI_TITLE, "  " + std::string(text)) adalah judul cyan tebal yang menjorok 2 spasi; std::string(text) mengubah string_view agar bisa disambung.
+        printRule('='); // printRule('='); mencetak garis '=' lagi di bawah judul.
+    } // akhir fungsi printTitle()
+
+    void printInstructions() { // printInstructions() berfungsi untuk menampilkan bentuk input yang diterima (huruf/angka, rentang, cara menulis desimal) dalam kotak sebelum pertanyaan pertama.
     // Dipanggil oleh run() di BAGIAN 6.
-    void printTitle(std::string_view text) {
-        std::cout << '\n';  // baris kosong sebelum judul
-        printRule('=');
-        std::cout << colorize(ANSI_TITLE, "  " + std::string(text)) << '\n';  // judul menjorok 2 spasi
-        printRule('=');
-    }
-
-    // Sebelum pertanyaan pertama, pengguna perlu tahu bentuk input yang diterima: huruf/angka, rentang, cara
-    // menulis desimal. Fungsi ini menampilkannya dalam kotak. Dipanggil oleh run() di BAGIAN 6.
-    void printInstructions() {
-        // Daftar baris ditulis langsung di antara { ... } (initializer list); compiler menjadikannya
-        // std::vector<std::string> untuk parameter lines milik drawBox(). Angka 1-1000 dan 0-100 di sini
-        // ditulis manual, jadi bila konstanta di BAGIAN 2 diubah, teks ini harus ikut diubah.
-        drawBox("Petunjuk Pengisian", {
-            "- Nama Mata Kuliah : Huruf, boleh Angka dan Spasi",
-            "                     (contoh: Algoritma dan Pemrograman, Kalkulus 2)",
-            "- Jumlah Mahasiswa : Angka bulat 1-1000",
-            "                     (contoh: 3)",
-            "- Nama Lengkap     : Huruf dan Spasi; tanda titik (.), tanda hubung (-), dan tanda petik (') diperbolehkan",
-            "                     (contoh: Muhammad A. Rizky, Siti Nur'aini)",
-            "- Nilai            : Angka 0-100; nilai desimal ditulis dengan tanda titik atau koma",
-            "                     (contoh: 87, 87,5 atau 87.5)",
-            "Ketik jawaban lalu tekan Enter. Input yang tidak sesuai akan diminta ulang."
-        });
-        std::cout << '\n';  // baris kosong setelah kotak
+        // Daftar di antara { ... } adalah initializer list: compiler menjadikannya std::vector<std::string> untuk parameter lines milik drawBox().
+        drawBox("Petunjuk Pengisian", { // drawBox("Petunjuk Pengisian", { artinya gambar kotak berjudul itu; angka 1-1000 dan 0-100 di bawah ditulis manual, jadi bila konstanta di BAGIAN 2 diubah, teks ini harus ikut diubah.
+            "- Nama Mata Kuliah : Huruf, boleh Angka dan Spasi", // "- Nama Mata Kuliah : Huruf, boleh Angka dan Spasi" adalah aturan nama mata kuliah; polanya "Label : isi", jadi drawBox() menyejajarkan lanjutannya.
+            "                     (contoh: Algoritma dan Pemrograman, Kalkulus 2)", // "                     (contoh: ...)" adalah contoh nama mata kuliah; spasi di depannya membuat teks sejajar dengan isi di baris atasnya.
+            "- Jumlah Mahasiswa : Angka bulat 1-1000", // "- Jumlah Mahasiswa : Angka bulat 1-1000" adalah aturan jumlah mahasiswa (STUDENT_COUNT_MIN sampai STUDENT_COUNT_MAX di BAGIAN 2).
+            "                     (contoh: 3)", // "                     (contoh: 3)" adalah contoh jumlah mahasiswa.
+            "- Nama Lengkap     : Huruf dan Spasi; tanda titik (.), tanda hubung (-), dan tanda petik (') diperbolehkan", // "- Nama Lengkap     : Huruf dan Spasi; ..." adalah aturan nama mahasiswa.
+            "                     (contoh: Muhammad A. Rizky, Siti Nur'aini)", // "                     (contoh: Muhammad A. Rizky, Siti Nur'aini)" adalah contoh nama mahasiswa.
+            "- Nilai            : Angka 0-100; nilai desimal ditulis dengan tanda titik atau koma", // "- Nilai            : Angka 0-100; ..." adalah aturan nilai (SCORE_MIN sampai SCORE_MAX di BAGIAN 2).
+            "                     (contoh: 87, 87,5 atau 87.5)", // "                     (contoh: 87, 87,5 atau 87.5)" adalah contoh cara menulis nilai.
+            "Ketik jawaban lalu tekan Enter. Input yang tidak sesuai akan diminta ulang." // "Ketik jawaban lalu tekan Enter. ..." adalah baris penutup petunjuk, tanpa koma di akhir karena ini elemen terakhir.
+        }); // }); menutup daftar isi kotak dan pemanggilan drawBox().
+        std::cout << '\n';  // std::cout << '\n'; mencetak satu baris kosong setelah kotak.
     }  // akhir fungsi printInstructions()
 
-    // Membuat satu baris tabel (nomor, nama, nilai) dengan lebar kolom tetap, siap dimasukkan ke kotak.
-    // Parameter no, name, score adalah teks tiap kolom; nameWidth lebar kolom nama. Hasilnya std::string.
-    // Dipanggil oleh run() di BAGIAN 6.
-    std::string formatTableRow(std::string_view no, std::string_view name, std::string_view score, int nameWidth) {
-        // Kolom nama tidak memakai std::setw, dikarenakan setw menghitung byte: nama dengan huruf non-ASCII
-        // (é, ö) memakai 2 byte per huruf dan kolomnya akan bergeser. Kita isi spasinya sendiri berdasarkan
-        // lebar tampil dari displayWidth().
-        const std::size_t shownWidth = displayWidth(name);  // lebar nama di layar
-        const std::size_t targetWidth = static_cast<std::size_t>(nameWidth);  // lebar kolom, diubah ke size_t
-        // Spasi tambahan = targetWidth - shownWidth bila positif, selain itu 0 (operator ternary, lihat drawBox()).
-        // std::string(n, ' ') membuat n spasi; + menyambungnya di belakang nama.
-        const std::string namePadded = std::string(name) + std::string(targetWidth > shownWidth ? targetWidth - shownWidth : 0, ' ');
-        std::ostringstream line;  // menyusun teks baris tanpa mengubah format std::cout
-        // std::left/std::right = rata kiri/kanan di dalam kolom; std::setw(n) = lebar kolom n karakter, hanya
-        // berlaku untuk item berikutnya.
-        line << std::left  << std::setw(NO_COLUMN_WIDTH)    << no
-             << namePadded
-             << std::right << std::setw(SCORE_COLUMN_WIDTH) << score;
-        return line.str();  // str() mengambil teks hasil susunan
+    std::string formatTableRow(std::string_view no, std::string_view name, std::string_view score, int nameWidth) { // formatTableRow(std::string_view no, std::string_view name, std::string_view score, int nameWidth)
+    // berfungsi untuk membuat satu baris tabel (nomor, nama, nilai) dengan lebar kolom tetap, siap dimasukkan ke kotak; no, name, score adalah teks tiap kolom, nameWidth lebar kolom nama.
+    // Hasilnya std::string. Dipanggil oleh run() di BAGIAN 6.
+        const std::size_t shownWidth = displayWidth(name);  // shownWidth adalah lebar nama di layar menurut displayWidth(), bukan jumlah byte-nya.
+        const std::size_t targetWidth = static_cast<std::size_t>(nameWidth);  // targetWidth adalah lebar kolom nama, diubah dari int ke std::size_t supaya bisa dibandingkan dengan shownWidth.
+        const std::string namePadded = std::string(name) + std::string(targetWidth > shownWidth ? targetWidth - shownWidth : 0, ' '); // std::string(name) + std::string(targetWidth > shownWidth ? targetWidth - shownWidth : 0, ' ')
+        // artinya nama disambung spasi sebanyak targetWidth - shownWidth bila positif, selain itu 0 (operator ternary, sudah dijelaskan di drawBox() di BAGIAN 3). Kolom nama tidak memakai std::setw, karena setw menghitung byte:
+        // nama dengan huruf non-ASCII (é, ö) memakai 2 byte per huruf dan kolomnya akan bergeser.
+        std::ostringstream line;  // line adalah aliran untuk menyusun teks baris tanpa mengubah format std::cout.
+        // std::left dan std::right berfungsi untuk merata-kirikan/merata-kanankan isi di dalam kolom; std::setw(n) berfungsi untuk mengatur lebar kolom n karakter, hanya berlaku untuk item berikutnya.
+        line << std::left  << std::setw(NO_COLUMN_WIDTH)    << no // line << std::left  << std::setw(NO_COLUMN_WIDTH)    << no artinya nomor urut rata kiri selebar 5 kolom,
+             << namePadded // << namePadded artinya nama yang sudah diberi spasi pengisi,
+             << std::right << std::setw(SCORE_COLUMN_WIDTH) << score; // << std::right << std::setw(SCORE_COLUMN_WIDTH) << score; artinya nilai rata kanan selebar 8 kolom.
+        return line.str();  // line.str() mengambil teks hasil susunan dari aliran, lalu dikembalikan.
     }  // akhir fungsi formatTableRow()
 
-    // Mengubah angka menjadi teks dengan tepat 2 desimal (87.5 -> "87.50"). Dipanggil oleh run() di BAGIAN 6.
-    std::string formatTwoDecimals(double number) {
-        std::ostringstream text;
-        // std::fixed = tulis desimal biasa (bukan notasi ilmiah 8.75e+01); std::setprecision(2) = tepat 2 angka
-        // di belakang titik desimal.
-        text << std::fixed << std::setprecision(2) << number;
-        return text.str();
-    }
+    std::string formatTwoDecimals(double number) { // formatTwoDecimals(double number) berfungsi untuk mengubah angka menjadi teks dengan tepat 2 desimal (87.5 menjadi "87.50"). Dipanggil oleh run() di BAGIAN 6.
+        std::ostringstream text; // text adalah aliran untuk menyusun teks angka.
+        // std::fixed berfungsi untuk menulis desimal biasa (bukan notasi ilmiah 8.75e+01); std::setprecision(2) berfungsi untuk menulis tepat 2 angka di belakang titik desimal.
+        text << std::fixed << std::setprecision(2) << number; // text << std::fixed << std::setprecision(2) << number; menulis number ke aliran dengan format 2 desimal.
+        return text.str(); // return text.str(); mengambil hasilnya sebagai std::string.
+    } // akhir fungsi formatTwoDecimals()
 
-}  // akhir namespace tanpa nama (dibuka sebelum BAGIAN 2)
+}  // akhir namespace tanpa nama (dibuka sebelum BAGIAN 2): semua di atas hanya terlihat di berkas ini
 
 // ===== BAGIAN 6: PROGRAM UTAMA TUGAS 1 =====
-// Fungsi run() dibungkus namespace bernama task1: semua nama di dalamnya "milik task1". Kenapa? Program
-// bermenu main.cpp di folder yang sama memanggilnya sebagai task1::run(), dan tugas lain punya run() juga,
-// jadi masing-masing perlu nama yang khas. Blok ini ditutup oleh "}  // akhir namespace task1".
-namespace task1 {
+// Fungsi run() dibungkus namespace bernama task1: semua nama di dalamnya "milik task1". Program bermenu main.cpp di folder yang sama memanggilnya sebagai task1::run(),
+// dan tugas lain punya run() juga, jadi masing-masing perlu nama yang khas.
+namespace task1 { // namespace task1 { membuka wadah bernama task1; ditutup oleh "}  // akhir namespace task1" di bawah.
 
-    // Alur utama Tugas 1: judul, petunjuk, input, hitung, lalu rekap. Dipanggil oleh main() di BAGIAN 7,
-    // atau oleh menu di main.cpp.
-    void run() {
-        // Konsol diatur ke UTF-8 di sini supaya program mandiri (tanpa menu) juga benar; aman dipanggil ulang.
-        enableUtf8Console();
-        printTitle("PROGRAM 1 : TOOLS NILAI MAHASISWA");
-        std::cout << '\n';  // baris kosong
-        printInstructions();
+    void run() { // run() adalah alur utama Tugas 1: judul, petunjuk, input, hitung, lalu rekap. Dipanggil oleh main() di BAGIAN 7, atau oleh menu di main.cpp sebagai task1::run().
+        enableUtf8Console(); // enableUtf8Console(); mengatur konsol Windows ke UTF-8 di sini supaya program mandiri (tanpa menu) juga benar; aman dipanggil ulang.
+        printTitle("PROGRAM 1 : TOOLS NILAI MAHASISWA"); // printTitle("PROGRAM 1 : TOOLS NILAI MAHASISWA"); mencetak judul program di antara dua garis '='.
+        std::cout << '\n';  // std::cout << '\n'; mencetak satu baris kosong.
+        printInstructions(); // printInstructions(); menampilkan kotak petunjuk pengisian.
 
         // --- Pengaturan awal: mata kuliah dan jumlah mahasiswa ditentukan oleh pengguna ---
-        // Keduanya const: setelah diisi tidak diubah lagi. readCourseName() mengulang pertanyaan sampai
-        // jawabannya sah.
-        const std::string courseName = readCourseName("Nama Mata Kuliah : ");
-        // readInteger() membatasi jumlah dari STUDENT_COUNT_MIN sampai STUDENT_COUNT_MAX (1-1000, BAGIAN 2)
+        const std::string courseName = readCourseName("Nama Mata Kuliah : "); // readCourseName("Nama Mata Kuliah : ") mengulang pertanyaan sampai jawabannya sah; const artinya courseName tidak diubah lagi.
+        const int studentCount = readInteger("Jumlah Mahasiswa : ", STUDENT_COUNT_MIN, STUDENT_COUNT_MAX); // readInteger("Jumlah Mahasiswa : ", STUDENT_COUNT_MIN, STUDENT_COUNT_MAX) membatasi jumlah 1-1000 (BAGIAN 2)
         // supaya salah ketik tertolak.
-        const int studentCount = readInteger("Jumlah Mahasiswa : ", STUDENT_COUNT_MIN, STUDENT_COUNT_MAX);
 
-        // Daftar mahasiswa dibuat sebesar jumlah yang diketik (alasan memakai vector ada di BAGIAN 1).
-        // std::vector<Student> = vector yang tiap elemennya struct Student (BAGIAN 2); angka di dalam ( )
-        // adalah jumlah elemen awal. Ukuran vector bertipe size_t sedangkan studentCount int, jadi diubah
-        // dulu dengan static_cast.
-        std::vector<Student> students(static_cast<std::size_t>(studentCount));
+        // std::vector<Student> adalah vector yang tiap elemennya struct Student (BAGIAN 2); angka di dalam ( ) adalah jumlah elemen awal.
+        std::vector<Student> students(static_cast<std::size_t>(studentCount)); // students(static_cast<std::size_t>(studentCount)) membuat daftar mahasiswa sebesar jumlah yang diketik; ukuran vector bertipe std::size_t
+        // sedangkan studentCount int, jadi diubah dulu dengan static_cast.
 
         // --- Tahap input: isi nama dan nilai setiap mahasiswa ---
-        std::cout << '\n' << colorize(ANSI_TITLE, "Input Nilai " + courseName) << '\n';  // sub-judul cyan tebal
-        int rowNumber = 1;  // nomor urut mulai 1: manusia menghitung dari 1
-        // Kunjungi setiap mahasiswa dengan range-based for. Student& (referensi) penting di sini: yang terisi
-        // harus data aslinya di dalam vector, bukan salinannya.
-        for (Student& student : students) {
-            // Label "Mahasiswa ke-N dari M" dicetak tebal; std::to_string mengubah angka menjadi teks.
-            std::cout << colorize(ANSI_BOLD, "Mahasiswa ke-" + std::to_string(rowNumber) + " dari " + std::to_string(studentCount)) << '\n';
-            // Anggota struct diakses dengan tanda titik: student.name dan student.score. Nama harus huruf,
-            // jadi readPersonName(); nilai boleh desimal dan dibatasi SCORE_MIN sampai SCORE_MAX (0-100), jadi
-            // readDecimal(). Keduanya ada di BAGIAN 4.
-            student.name  = readPersonName   ("  Nama Lengkap  : ");
-            student.score = readDecimal("  Nilai (0-100) : ", SCORE_MIN, SCORE_MAX);
-            ++rowNumber;  // nomor urut berikutnya
-        }  // akhir for
+        std::cout << '\n' << colorize(ANSI_TITLE, "Input Nilai " + courseName) << '\n';  // colorize(ANSI_TITLE, "Input Nilai " + courseName) adalah sub-judul cyan tebal berisi nama mata kuliah.
+        int rowNumber = 1;  // rowNumber = 1 adalah nomor urut mahasiswa, mulai 1 karena manusia menghitung dari 1.
+        // Student& (referensi tanpa const) berfungsi agar yang terisi adalah data aslinya di dalam vector, bukan salinannya.
+        for (Student& student : students) { // for (Student& student : students) artinya kunjungi setiap mahasiswa di students dan isi datanya langsung.
+            std::cout << colorize(ANSI_BOLD, "Mahasiswa ke-" + std::to_string(rowNumber) + " dari " + std::to_string(studentCount)) << '\n'; // colorize(ANSI_BOLD, "Mahasiswa ke-" + ... ) adalah label
+            // "Mahasiswa ke-N dari M" dicetak tebal; std::to_string mengubah angka menjadi teks.
+            student.name  = readPersonName   ("  Nama Lengkap  : "); // student.name  = readPersonName   ("  Nama Lengkap  : "); mengisi anggota name lewat tanda titik; nama harus huruf, jadi readPersonName() (BAGIAN 4).
+            student.score = readDecimal("  Nilai (0-100) : ", SCORE_MIN, SCORE_MAX); // student.score = readDecimal("  Nilai (0-100) : ", SCORE_MIN, SCORE_MAX); mengisi nilai; boleh desimal dan dibatasi 0-100, jadi readDecimal().
+            ++rowNumber;  // ++rowNumber; artinya nomor urut berikutnya.
+        }  // akhir perulangan input mahasiswa
 
         // --- Tahap perhitungan: total, rata-rata, dan lebar kolom nama ---
-        double      total     = 0.0;  // jumlah nilai desimal harus tetap desimal, jadi double
-        std::size_t nameWidth = NAME_COLUMN_MIN_WIDTH;  // size_t: dibandingkan dengan hasil displayWidth()
-        // Kali ini const Student& (referensi hanya-baca): data dibaca tanpa disalin dan tidak diubah.
-        for (const Student& student : students) {
-            total += student.score;  // += menjumlahkan ke total (singkatan total = total + student.score)
-            // Kolom nama harus muat nama terpanjang + 2 (jarak ke kolom nilai); std::max menyimpan yang terbesar.
-            nameWidth = std::max(nameWidth, displayWidth(student.name) + 2);
-        }  // akhir for
-        // Rata-rata = total dibagi jumlah mahasiswa. total sudah double, jadi hasil baginya desimal
-        // (pada int, 11/2 = 5; pada double 5.5). students.size() bertipe size_t; static_cast<double>
-        // mengubahnya ke double secara terang-terangan supaya kedua sisi pembagian sama-sama double.
-        // Jumlah mahasiswa minimal 1 (BAGIAN 2), jadi tidak pernah terjadi pembagian dengan nol.
-        const double average = total / static_cast<double>(students.size());
+        double      total     = 0.0;  // total = 0.0 adalah jumlah semua nilai; jumlah nilai desimal harus tetap desimal, jadi double.
+        std::size_t nameWidth = NAME_COLUMN_MIN_WIDTH;  // nameWidth = NAME_COLUMN_MIN_WIDTH (20) adalah lebar kolom nama, mula-mula lebar minimal; std::size_t karena di perulangan tepat di bawah ia dibandingkan dengan hasil displayWidth() (BAGIAN 3).
+        for (const Student& student : students) { // for (const Student& student : students) artinya kali ini const Student& (referensi hanya-baca): data dibaca tanpa disalin dan tidak diubah.
+            total += student.score;  // total += student.score; menjumlahkan nilai ke total (singkatan dari total = total + student.score).
+            nameWidth = std::max(nameWidth, displayWidth(student.name) + 2); // std::max(nameWidth, displayWidth(student.name) + 2) artinya kolom nama harus muat nama terpanjang + 2 (jarak ke kolom nilai).
+        }  // akhir perulangan menghitung
+        const double average = total / static_cast<double>(students.size()); // total / static_cast<double>(students.size()) adalah rata-rata: total sudah double, jadi hasil baginya desimal (pada int, 11/2 = 5;
+        // pada double 5.5); students.size() bertipe std::size_t, jadi diubah ke double dengan static_cast supaya kedua sisi sama-sama double. Jumlah minimal 1 (BAGIAN 2), jadi tidak pernah dibagi nol.
 
         // --- Tahap output: tabel rekap disusun ke vector, lalu digambar dalam satu kotak ---
-        // formatTableRow() menerima lebar kolom nama sebagai int, dan garis tabel di bawah menjumlahkannya
-        // dengan lebar kolom lain yang juga int. Jadi nameWidth (size_t) diubah dulu ke int.
-        const int nameColumnWidth = static_cast<int>(nameWidth);
-        // Garis '-' selebar tabel: panjangnya jumlah lebar ketiga kolom.
-        const std::string tableRule(NO_COLUMN_WIDTH + nameColumnWidth + SCORE_COLUMN_WIDTH, '-');
+        const int nameColumnWidth = static_cast<int>(nameWidth); // static_cast<int>(nameWidth) mengubah nameWidth ke int, karena formatTableRow() menerima lebar kolom nama sebagai int dan garis tabel di bawah
+        // menjumlahkannya dengan lebar kolom lain yang juga int.
+        const std::string tableRule(NO_COLUMN_WIDTH + nameColumnWidth + SCORE_COLUMN_WIDTH, '-'); // tableRule(NO_COLUMN_WIDTH + nameColumnWidth + SCORE_COLUMN_WIDTH, '-') adalah garis '-' selebar tabel: jumlah lebar ketiga kolom.
 
-        std::vector<std::string> summaryLines;  // jumlah baris mengikuti jumlah mahasiswa, jadi vector
-        // push_back menambahkan satu baris di akhir vector; + menyambung label dengan isinya.
-        summaryLines.push_back("Mata Kuliah      : " + courseName);
-        summaryLines.push_back("Jumlah Mahasiswa : " + std::to_string(studentCount));
-        summaryLines.push_back("");  // baris kosong pemisah
-        // Judul kolom ("No", "Nama", "Nilai") disusun formatTableRow() (BAGIAN 5) lalu dicetak tebal.
-        summaryLines.push_back(colorize(ANSI_BOLD, formatTableRow("No", "Nama", "Nilai", nameColumnWidth)));
-        summaryLines.push_back(tableRule);  // garis atas tabel
-        rowNumber = 1;  // penomoran tabel dimulai ulang dari 1
-        // Satu baris tabel per mahasiswa: nomor, nama, dan nilai dengan 2 desimal (formatTwoDecimals()).
-        for (const Student& student : students) {
-            summaryLines.push_back(formatTableRow(std::to_string(rowNumber), student.name, formatTwoDecimals(student.score), nameColumnWidth));
-            ++rowNumber;
-        }  // akhir for
-        summaryLines.push_back(tableRule);  // garis bawah tabel
-        // Kolom No diisi "" supaya label total dan rata-rata sejajar dengan kolom nama. Keduanya hijau tebal,
-        // dikarenakan inilah hasil akhir yang paling ditunggu pengguna.
-        summaryLines.push_back(colorize(ANSI_SUCCESS, formatTableRow("", "Nilai Total",     formatTwoDecimals(total),    nameColumnWidth)));
-        summaryLines.push_back(colorize(ANSI_SUCCESS, formatTableRow("", "Nilai Rata-Rata", formatTwoDecimals(average), nameColumnWidth)));
-        std::cout << '\n';  // baris kosong sebelum kotak
-        drawBox("Rekap Nilai Mahasiswa", summaryLines);  // kotak rekap (drawBox() di BAGIAN 3)
+        std::vector<std::string> summaryLines;  // summaryLines adalah baris-baris isi kotak rekap; jumlahnya mengikuti jumlah mahasiswa, jadi vector.
+        summaryLines.push_back("Mata Kuliah      : " + courseName); // summaryLines.push_back("Mata Kuliah      : " + courseName); menambahkan baris nama mata kuliah; push_back menaruhnya di akhir vector.
+        summaryLines.push_back("Jumlah Mahasiswa : " + std::to_string(studentCount)); // summaryLines.push_back("Jumlah Mahasiswa : " + std::to_string(studentCount)); menambahkan baris jumlah mahasiswa.
+        summaryLines.push_back("");  // summaryLines.push_back(""); menambahkan baris kosong sebagai pemisah.
+        summaryLines.push_back(colorize(ANSI_BOLD, formatTableRow("No", "Nama", "Nilai", nameColumnWidth))); // formatTableRow("No", "Nama", "Nilai", nameColumnWidth) menyusun judul kolom (BAGIAN 5), lalu dicetak tebal.
+        summaryLines.push_back(tableRule);  // summaryLines.push_back(tableRule); menambahkan garis atas tabel.
+        rowNumber = 1;  // rowNumber = 1; artinya penomoran tabel dimulai ulang dari 1.
+        for (const Student& student : students) { // for (const Student& student : students) artinya satu baris tabel per mahasiswa: nomor, nama, dan nilai dengan 2 desimal.
+            summaryLines.push_back(formatTableRow(std::to_string(rowNumber), student.name, formatTwoDecimals(student.score), nameColumnWidth)); // formatTableRow(std::to_string(rowNumber), student.name, formatTwoDecimals(student.score), nameColumnWidth)
+            // menyusun baris mahasiswa ini; formatTwoDecimals() membuat nilai tampil 2 desimal.
+            ++rowNumber; // ++rowNumber; artinya nomor berikutnya.
+        }  // akhir perulangan baris tabel
+        summaryLines.push_back(tableRule);  // summaryLines.push_back(tableRule); menambahkan garis bawah tabel.
+        summaryLines.push_back(colorize(ANSI_SUCCESS, formatTableRow("", "Nilai Total",     formatTwoDecimals(total),    nameColumnWidth))); // formatTableRow("", "Nilai Total",     formatTwoDecimals(total),    nameColumnWidth)
+        // adalah baris total: kolom No diisi "" supaya label sejajar dengan kolom nama; hijau tebal karena inilah hasil akhir yang paling ditunggu pengguna.
+        summaryLines.push_back(colorize(ANSI_SUCCESS, formatTableRow("", "Nilai Rata-Rata", formatTwoDecimals(average), nameColumnWidth))); // formatTableRow("", "Nilai Rata-Rata", formatTwoDecimals(average), nameColumnWidth)
+        // adalah baris rata-rata, juga hijau tebal.
+        std::cout << '\n';  // std::cout << '\n'; mencetak satu baris kosong sebelum kotak.
+        drawBox("Rekap Nilai Mahasiswa", summaryLines);  // drawBox("Rekap Nilai Mahasiswa", summaryLines); menggambar kotak rekap (drawBox() di BAGIAN 3).
     }  // akhir fungsi run()
 
 }  // akhir namespace task1
 
 // ===== BAGIAN 7: TITIK AWAL BILA BERKAS INI DIKOMPILASI SENDIRI =====
-// C++ hanya mengizinkan satu main(), dan program bermenu main.cpp sudah punya. Jadi main() di bawah hanya
-// ikut saat berkas ini dikompilasi sendiri. #ifndef BUILD_WITH_MENU (if not defined, lihat BAGIAN 1)
-// bertanya: apakah makro BUILD_WITH_MENU belum ada? Saat digabung, kompilasi memakai -DBUILD_WITH_MENU
-// (opsi -D mendefinisikan makro dari baris perintah), sehingga bagian ini sampai #endif dilewati preprocessor.
-#ifndef BUILD_WITH_MENU
-// main() adalah titik awal program: fungsi pertama yang dijalankan saat program dibuka. Standar C++
-// mewajibkan main bertipe int, dan return 0 di akhirnya berarti program selesai tanpa error.
-int main() {
-    std::cout << colorize(ANSI_BOLD, "Tugas Praktikum 1 - Fadhlillah (2531070011)") << '\n';  // identitas, tebal
-    task1::run();  // :: memanggil fungsi run() di dalam namespace task1 (BAGIAN 6)
-    return 0;
-}
-#endif  // akhir #ifndef BUILD_WITH_MENU
+// C++ hanya mengizinkan satu main(), dan program bermenu main.cpp sudah punya. Jadi main() di bawah hanya ikut saat berkas ini dikompilasi sendiri.
+#ifndef BUILD_WITH_MENU // BUILD_WITH_MENU dicek: bila penanda ini belum ada (kompilasi sendiri), bagian sampai #endif ikut; bila ada (kompilasi dengan -DBUILD_WITH_MENU), bagian ini dilewati.
+// int main() adalah titik awal program: fungsi yang pertama kali dijalankan saat program dibuka. Standar C++ mewajibkan main bertipe int, yaitu bilangan bulat
+// yang dikirim ke sistem operasi saat program selesai; nilai 0 (lihat return 0 di bawah) menandakan program selesai tanpa error.
+int main() { // main() adalah fungsi utama saat berkas ini dijalankan sendiri sebagai program tugas1.
+    std::cout << colorize(ANSI_BOLD, "Tugas Praktikum 1 - Fadhlillah (2531070011)") << '\n';  // colorize(ANSI_BOLD, "Tugas Praktikum 1 - Fadhlillah (2531070011)") adalah identitas, dicetak tebal.
+    task1::run();  // task1::run(); memanggil fungsi run() di dalam namespace task1 (BAGIAN 6); tanda :: berarti "milik".
+    return 0; // return 0; mengakhiri main(); 0 berarti selesai tanpa error.
+} // akhir main()
+#endif  // selesai #ifndef BUILD_WITH_MENU

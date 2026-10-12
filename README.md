@@ -156,8 +156,9 @@ dibungkus `#ifndef BUILD_WITH_MENU`: dikompilasi sendiri ia menjadi program utuh
 | Namespace | huruf kecil | `task1`, `task2`, `task3` |
 
 Identifier berbahasa Inggris; komentar dan teks tampilan berbahasa Indonesia. Komentar ditulis untuk mahasiswa semester
-awal dengan nada seperti teman yang menjelaskan: mulai dari gambaran besar, lalu apa konstruksinya, apa yang
-dilakukannya di situ, dan mengapa (pola "menggunakan X berfungsi untuk Y, dikarenakan Z" di tempat yang alami).
+awal: setiap kata kunci atau konstruksi C++ dijelaskan satu baris di atas kemunculan pertamanya di berkas itu, dan
+setiap baris kode diberi komentar di ujungnya yang mengulang bagian khas baris itu lalu menjelaskan gunanya dengan kata
+sederhana ("digunakan untuk", "adalah", "artinya", "berfungsi untuk"), termasuk alasan teknis yang penting.
 Kompilasi dijaga bersih dengan `-Wall -Wextra -pedantic -Werror` (GCC 13 dan Clang).
 
 ## Catatan tampilan
