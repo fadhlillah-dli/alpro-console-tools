@@ -42,11 +42,14 @@ jobs:
           mkdir -p paket && cp tugas_alpro dist/macos/Jalankan.command dist/CATATAN-RILIS.txt README.md LICENSE paket/
           cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
 
-      - name: Kompilasi Linux (libstdc++ statis agar jalan di banyak distro)
+      # Menggunakan -static (tautan statis penuh, termasuk glibc) berfungsi agar paket jalan di distro dengan glibc lebih lama
+      # dari runner (Ubuntu 22.04, Debian 12, WSL bawaan), dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38.
+      - name: Kompilasi Linux (statis penuh agar jalan di banyak distro)
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static-libstdc++ -static-libgcc -o tugas_alpro src/*.cpp
+          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro src/*.cpp
+          file tugas_alpro | grep -q 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
           mkdir -p paket && cp tugas_alpro dist/linux/jalankan.sh dist/CATATAN-RILIS.txt README.md LICENSE paket/
           tar -czf "alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.tar.gz" -C paket .
 

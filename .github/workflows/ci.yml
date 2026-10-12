@@ -55,6 +55,17 @@ jobs:
           echo "$out" | grep -q "Nilai Rata-Rata        70.00" || { echo "rata-rata salah"; exit 1; }
           echo "Uji asap lulus"
 
+      # Membangun biner statis persis seperti paket rilis Linux lalu menjalankannya, dikarenakan paket rilis harus jalan di
+      # distro dengan glibc lama dan ketergantungan glibc hanya hilang bila tautan statis penuh.
+      - name: Uji biner statis (seperti paket rilis Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro_static src/*.cpp
+          file tugas_alpro_static | grep -q 'statically linked' || { echo "biner tidak statis"; exit 1; }
+          printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro_static | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "luas arsir salah"; exit 1; }
+          echo "Biner statis OK"
+
       # Dijalankan di shell MSYS2 dikarenakan biner CI tidak ditautkan statis dan membutuhkan DLL libstdc++ dari PATH MSYS2.
       - name: Uji asap (Windows)
         if: runner.os == 'Windows'

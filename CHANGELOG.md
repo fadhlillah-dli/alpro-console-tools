@@ -2,6 +2,12 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Diperbaiki
+- Paket Linux ditautkan statis penuh (termasuk glibc) agar jalan di distro dengan glibc lebih lama dari runner rilis
+  (Ubuntu 22.04, Debian 12, WSL bawaan); sebelumnya meminta `GLIBC_2.38`. CI Linux kini juga menguji biner statis.
+
 ## [1.0.3] - 2026-10-12
 
 ### Ditambahkan
