@@ -86,6 +86,7 @@ Warna ANSI mati otomatis bila keluaran bukan terminal, sehingga `grep` di atas c
   lengkap dengan fungsi bantunya di namespace tanpa nama; `main()`-nya dibungkus `#ifndef BUILD_WITH_MENU`.
 - `.github/workflows/ci.yml` — build 3 OS + uji asap; `release.yml` — paket rilis saat tag `v*`.
 - `dist/` — peluncur dan catatan untuk paket rilis; `install.sh` — pemasang curl untuk macOS/Linux;
-  `install.ps1` — pemasang PowerShell untuk Windows (`irm … | iex`), diuji di job Windows CI.
+  `install.ps1` — pemasang PowerShell untuk Windows (`irm … | iex`), diuji di job Windows CI;
+  `coba.sh` / `coba.ps1` — coba sekali jalan tanpa memasang (folder sementara dihapus saat program ditutup), diuji di CI.
 - `.claude/settings.json` — setelan Claude Code yang dibagikan (atribusi commit/PR kosong);
   `.claude/settings.local.json` — setelan lokal, tidak di-commit.

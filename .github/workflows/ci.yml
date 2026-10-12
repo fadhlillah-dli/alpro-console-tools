@@ -55,6 +55,20 @@ jobs:
           echo "$out" | grep -q "Nilai Rata-Rata        70.00" || { echo "rata-rata salah"; exit 1; }
           echo "Uji asap lulus"
 
+      # Menguji coba.sh persis seperti pengguna (tanpa tty, jadi masukan lewat stdin) dan memastikan folder sementaranya
+      # benar-benar dihapus, dikarenakan janji skrip itu adalah tidak menyisakan berkas apa pun.
+      - name: Uji coba.sh (sekali jalan tanpa memasang)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          out=$(printf '3\n\n2\n14\n\n0\n' | sh coba.sh)
+          echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "$out"; echo "luas arsir salah"; exit 1; }
+          # Folder induk sementara dibaca dari mktemp sendiri, dikarenakan di macOS mktemp memakai DARWIN_USER_TEMP_DIR, bukan TMPDIR.
+          root=$(dirname "$(mktemp -u)")
+          sisa=$(find "$root" -maxdepth 2 -name tugas_alpro 2>/dev/null | wc -l)
+          [ "$sisa" -eq 0 ] || { echo "folder sementara tidak dihapus ($sisa sisa di $root)"; exit 1; }
+          echo "coba.sh OK, tanpa sisa"
+
       # Membangun biner statis persis seperti paket rilis Linux lalu menjalankannya, dikarenakan paket rilis harus jalan di
       # distro dengan glibc lama dan ketergantungan glibc hanya hilang bila tautan statis penuh.
       - name: Uji biner statis (seperti paket rilis Linux)
@@ -94,6 +108,36 @@ jobs:
           $out = [IO.File]::ReadAllText($outFile)
           if ($p.ExitCode -ne 0 -or $out -notmatch 'Luas Bangun yang Diarsir : 42\.00') { Write-Host $out; throw "uji menu 3 gagal (kode keluar $($p.ExitCode))" }
           "Uji install.ps1 lulus (PowerShell $($PSVersionTable.PSVersion))"
+
+      # Menguji coba.ps1 dalam mode terskrip (ALPRO_INPUT) pada kedua PowerShell dan memastikan folder sementara
+      # alpro-coba-* hilang sesudahnya. Jalur interaktif (& $exe, Ctrl+C) hanya bisa diuji manual di Windows sungguhan.
+      - name: Uji coba.ps1 (Windows PowerShell 5.1)
+        if: runner.os == 'Windows' && !cancelled()
+        shell: powershell
+        run: |
+          $env:ALPRO_INPUT = Join-Path $env:RUNNER_TEMP 'coba-masuk-51.txt'
+          [IO.File]::WriteAllText($env:ALPRO_INPUT, "3`r`n`r`n2`r`n14`r`n`r`n0`r`n")
+          $log = (Get-Content -Raw coba.ps1 | Invoke-Expression) *>&1 | Out-String
+          Write-Host $log
+          if ($log -notmatch 'Luas Bangun yang Diarsir : 42\.00') { throw 'luas arsir salah' }
+          if ($log -notmatch 'kode keluar 0\)') { throw 'kode keluar bukan 0' }
+          $sisa = @(Get-ChildItem -Path ([IO.Path]::GetTempPath()) -Filter 'alpro-coba-*' -Directory -ErrorAction SilentlyContinue)
+          if ($sisa.Count -ne 0) { throw "folder sementara tidak dihapus ($($sisa.Count) sisa)" }
+          "coba.ps1 OK, tanpa sisa (PowerShell $($PSVersionTable.PSVersion))"
+
+      - name: Uji coba.ps1 (PowerShell 7)
+        if: runner.os == 'Windows' && !cancelled()
+        shell: pwsh
+        run: |
+          $env:ALPRO_INPUT = Join-Path $env:RUNNER_TEMP 'coba-masuk-7.txt'
+          [IO.File]::WriteAllText($env:ALPRO_INPUT, "3`r`n`r`n2`r`n14`r`n`r`n0`r`n")
+          $log = (Get-Content -Raw coba.ps1 | Invoke-Expression) *>&1 | Out-String
+          Write-Host $log
+          if ($log -notmatch 'Luas Bangun yang Diarsir : 42\.00') { throw 'luas arsir salah' }
+          if ($log -notmatch 'kode keluar 0\)') { throw 'kode keluar bukan 0' }
+          $sisa = @(Get-ChildItem -Path ([IO.Path]::GetTempPath()) -Filter 'alpro-coba-*' -Directory -ErrorAction SilentlyContinue)
+          if ($sisa.Count -ne 0) { throw "folder sementara tidak dihapus ($($sisa.Count) sisa)" }
+          "coba.ps1 OK, tanpa sisa (PowerShell $($PSVersionTable.PSVersion))"
 
       - name: Uji install.ps1 (PowerShell 7)
         if: runner.os == 'Windows' && !cancelled()

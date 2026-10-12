@@ -2,6 +2,13 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Ditambahkan
+- `coba.sh` dan `coba.ps1`: mencoba program sekali jalan tanpa memasang apa pun (unduh ke folder sementara, verifikasi
+  SHA-256, jalankan, hapus foldernya saat program ditutup atau dihentikan); diuji otomatis di CI ketiga OS.
+- README: cara menghapus pemasangan di macOS/Linux, Homebrew, dan Windows (termasuk entri PATH).
+
 ## [1.0.4] - 2026-10-12
 
 ### Diperbaiki

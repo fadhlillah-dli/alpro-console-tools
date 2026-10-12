@@ -102,6 +102,38 @@ diunduh **lewat browser** diperiksa pada pemakaian pertama:
   (sekali). Peluncur melepas tanda unduhan dari `tugas_alpro.exe` sehingga tidak ditanya lagi.
 - Linux: `sh jalankan.sh`.
 
+### Coba dulu tanpa memasang
+
+Ingin mencoba sekali tanpa meninggalkan apa pun? Perintah berikut mengunduh paket ke folder sementara, memverifikasi
+SHA-256, menjalankan program, lalu menghapus foldernya begitu program ditutup (juga bila dihentikan dengan Ctrl+C).
+Tidak ada yang dipasang, PATH tidak disentuh.
+
+```bash
+# macOS dan Linux
+curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.ps1 | iex
+```
+
+### Menghapus pemasangan
+
+Pemasang satu perintah hanya meninggalkan satu berkas program (dan di Windows satu entri PATH pengguna):
+
+- macOS dan Linux: `rm ~/.local/bin/tugas_alpro`
+- Homebrew: `brew uninstall alpro-console-tools`
+- Windows (PowerShell): hapus foldernya, lalu entri PATH dilepas tanpa mengubah entri lain:
+
+  ```powershell
+  Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Programs\alpro-console-tools"
+  $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+  $p = [string]$k.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+  $k.SetValue('Path', (($p -split ';' | Where-Object { $_ -and $_ -notlike '*\Programs\alpro-console-tools' }) -join ';'), $k.GetValueKind('Path'))
+  $k.Close(); [Environment]::SetEnvironmentVariable('ALPRO_PATH_REFRESH', [System.Management.Automation.Language.NullString]::Value, 'User')
+  ```
+
 ## Kompilasi sendiri
 
 Syarat: compiler C++17 (`g++` atau `clang++`).
@@ -166,6 +198,7 @@ alpro-console-tools/
 ├── CLAUDE.md                        aturan kerja untuk Claude Code: konvensi, perintah build dan uji asap
 ├── install.sh                       pemasang satu perintah untuk macOS/Linux (unduh rilis + verifikasi SHA-256)
 ├── install.ps1                      pemasang satu perintah untuk Windows lewat PowerShell (unduh rilis + verifikasi SHA-256)
+├── coba.sh · coba.ps1               coba sekali jalan tanpa memasang: unduh ke folder sementara, jalankan, hapus
 ├── Makefile · jalankan.command · jalankan.bat
 ├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
 └── README.md
