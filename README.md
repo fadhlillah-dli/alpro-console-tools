@@ -64,7 +64,8 @@ Program tidak ditandatangani Apple/Microsoft, jadi pada pemakaian pertama:
 
 - macOS: klik **kanan** `Jalankan.command` → Open → Open. Jangan klik dua kali `tugas_alpro` secara langsung; macOS
   akan menolaknya ("Not Opened"). Peluncur melepas tanda karantina dari program lalu menjalankannya di Terminal.
-- Windows: klik dua kali `Jalankan.bat`; bila SmartScreen muncul, "More info" → "Run anyway".
+- Windows: klik dua kali `Jalankan.bat`; pada layar biru "Windows protected your PC" klik tautan **More info** lalu
+  **Run anyway** (sekali). Peluncur melepas tanda unduhan dari `tugas_alpro.exe` sehingga tidak ditanya lagi.
 - Linux: `sh jalankan.sh` dari terminal.
 
 Rincian ada di `CATATAN-RILIS.txt` dalam paket.

@@ -8,5 +8,8 @@ macOS   : klik KANAN Jalankan.command -> Open -> Open (cukup sekali). Jangan kli
           melepas tanda karantina dari tugas_alpro lalu menjalankannya di Terminal.
           Bila sudah terlanjur ditolak: System Settings -> Privacy & Security -> bagian Security -> "Open Anyway",
           atau di Terminal pada folder ini:  xattr -d com.apple.quarantine tugas_alpro
-Windows : klik dua kali Jalankan.bat. Bila SmartScreen muncul: "More info" -> "Run anyway" (sekali saja).
+Windows : klik dua kali Jalankan.bat. Bila layar biru "Windows protected your PC" muncul, klik tautan kecil
+          "More info" lalu tombol "Run anyway" (cukup sekali). Peluncur melepas tanda unduhan dari tugas_alpro.exe
+          sehingga program tidak ditanya lagi. Alternatif: klik kanan tugas_alpro.exe -> Properties -> centang
+          "Unblock" -> OK.
 Linux   : buka terminal di folder ini lalu ketik  sh jalankan.sh
