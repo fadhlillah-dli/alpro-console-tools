@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:  # berfungsi agar CI bisa dijalankan manual pada branch mana pun (gh workflow run ci.yml --ref <branch>)
 
 jobs:
   build:
@@ -67,22 +68,31 @@ jobs:
 
       # Menguji pemasang satu perintah persis seperti pengguna (irm | iex) pada kedua PowerShell yang ada di Windows,
       # memakai rilis terbaru yang sudah terbit; ALPRO_BIN_DIR mengarahkan pemasangan ke folder sementara runner.
+      # Uji menu 3 memakai Start-Process dengan berkas masukan/keluaran, dikarenakan pipa PowerShell 5.1 mengubah stderr
+      # program menjadi error PowerShell. Kedua langkah tetap dijalankan walau yang satu gagal (!cancelled()), agar hasil
+      # kedua shell selalu terlihat.
       - name: Uji install.ps1 (Windows PowerShell 5.1)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !cancelled()
         shell: powershell
         run: |
           $env:ALPRO_BIN_DIR = Join-Path $env:RUNNER_TEMP 'alpro-ps51'
           Get-Content -Raw install.ps1 | Invoke-Expression
-          $out = "3`n`n2`n14`n`n0`n" | & (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe')
-          if (-not ($out -match 'Luas Bangun yang Diarsir : 42\.00')) { throw 'luas arsir salah' }
+          $in = Join-Path $env:RUNNER_TEMP 'uji-masuk-51.txt'; $outFile = Join-Path $env:RUNNER_TEMP 'uji-keluar-51.txt'
+          [IO.File]::WriteAllText($in, "3`r`n`r`n2`r`n14`r`n`r`n0`r`n")
+          $p = Start-Process -FilePath (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe') -RedirectStandardInput $in -RedirectStandardOutput $outFile -NoNewWindow -Wait -PassThru
+          $out = [IO.File]::ReadAllText($outFile)
+          if ($p.ExitCode -ne 0 -or $out -notmatch 'Luas Bangun yang Diarsir : 42\.00') { Write-Host $out; throw "uji menu 3 gagal (kode keluar $($p.ExitCode))" }
           "Uji install.ps1 lulus (PowerShell $($PSVersionTable.PSVersion))"
 
       - name: Uji install.ps1 (PowerShell 7)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !cancelled()
         shell: pwsh
         run: |
           $env:ALPRO_BIN_DIR = Join-Path $env:RUNNER_TEMP 'alpro-ps7'
           Get-Content -Raw install.ps1 | Invoke-Expression
-          $out = "3`n`n2`n14`n`n0`n" | & (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe')
-          if (-not ($out -match 'Luas Bangun yang Diarsir : 42\.00')) { throw 'luas arsir salah' }
+          $in = Join-Path $env:RUNNER_TEMP 'uji-masuk-7.txt'; $outFile = Join-Path $env:RUNNER_TEMP 'uji-keluar-7.txt'
+          [IO.File]::WriteAllText($in, "3`r`n`r`n2`r`n14`r`n`r`n0`r`n")
+          $p = Start-Process -FilePath (Join-Path $env:ALPRO_BIN_DIR 'tugas_alpro.exe') -RedirectStandardInput $in -RedirectStandardOutput $outFile -NoNewWindow -Wait -PassThru
+          $out = [IO.File]::ReadAllText($outFile)
+          if ($p.ExitCode -ne 0 -or $out -notmatch 'Luas Bangun yang Diarsir : 42\.00') { Write-Host $out; throw "uji menu 3 gagal (kode keluar $($p.ExitCode))" }
           "Uji install.ps1 lulus (PowerShell $($PSVersionTable.PSVersion))"

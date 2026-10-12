@@ -24,7 +24,9 @@ berwarna, sketsa Braille, CI di 3 OS, dan rilis biner via GitHub Actions. Baca `
    - input salah ditolak dengan pesan `[!]`.
 6. **Jangan mengubah perilaku, teks tampilan, atau hasil hitung tanpa diminta pemilik.** Perubahan kecil,
    selesai utuh.
-7. **Tampilkan ringkasan diff dan minta konfirmasi pemilik sebelum commit dan sebelum push.**
+7. **Commit dan push dilakukan otomatis** begitu perubahan selesai dan aturan 4 dan 5 lulus, tanpa menunggu konfirmasi
+   pemilik; ringkasan diff tetap dilaporkan setelahnya. Konfirmasi hanya untuk tindakan yang tidak bisa dibatalkan di luar
+   alur itu (force-push, menulis ulang riwayat, menghapus rilis/tag, menyentuh repositori lain).
 
 ## Perintah build
 
@@ -71,9 +73,8 @@ Warna ANSI mati otomatis bila keluaran bukan terminal, sehingga `grep` di atas c
 
 ## Alur commit dan rilis
 
-- Sebelum commit: aturan 4 dan 5 lulus, lalu tunjukkan `git diff --stat` dan minta konfirmasi (aturan 7).
-- Setelah commit: `git log -1 --format=full` harus tanpa baris atribusi AI (aturan 1).
-- Push hanya setelah konfirmasi pemilik (aturan 7).
+- Sebelum commit: aturan 4 dan 5 lulus; `git diff --stat` dilaporkan bersama hasilnya (aturan 7).
+- Setelah commit: `git log -1 --format=full` harus tanpa baris atribusi AI (aturan 1), lalu langsung push dan pantau CI.
 - Rilis: tag `v*` memicu `.github/workflows/release.yml` (tiga paket + `SHA256SUMS`, lalu formula Homebrew ke
   `fadhlillah-dli/homebrew-tap` bila secret `HOMEBREW_TAP_TOKEN` tersedia). `CHANGELOG.md` mengikuti
   Keep a Changelog; versi di `CHANGELOG.md` dan tag harus sama.

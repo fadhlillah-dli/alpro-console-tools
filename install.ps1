@@ -112,18 +112,32 @@
 
         # Uji jalan singkat (pilihan menu 0 = keluar), dikarenakan Smart App Control (Windows 11) atau antivirus bisa
         # memblokir program yang tidak ditandatangani walau berkasnya sudah terpasang; lebih baik ketahuan di sini.
+        # Menggunakan Start-Process dengan masukan/keluaran dialihkan ke berkas berfungsi untuk mendapatkan kode keluar
+        # dan pesan galat apa adanya, dikarenakan pipa PowerShell 5.1 mengubah keluaran stderr program menjadi error
+        # PowerShell dan menyamarkan penyebab sebenarnya.
         # Encoding konsol disimpan lalu dipulihkan, dikarenakan program mengubah code page konsol ke UTF-8 dan jendela
         # PowerShell pengguna tidak boleh ikut berubah hanya karena uji ini.
-        $runs = $false
+        $probeIn  = Join-Path $tmp 'uji-masuk.txt'
+        $probeOut = Join-Path $tmp 'uji-keluar.txt'
+        $probeErr = Join-Path $tmp 'uji-galat.txt'
+        [IO.File]::WriteAllText($probeIn, "0`r`n")
+        $exitCode = $null
+        $detail   = ''
         $savedInputEncoding = [Console]::InputEncoding; $savedOutputEncoding = [Console]::OutputEncoding
-        try { "0`n" | & $target *> $null; $runs = ($LASTEXITCODE -eq 0) }
-        catch { $runs = $false }
+        try {
+            $proc = Start-Process -FilePath $target -RedirectStandardInput $probeIn -RedirectStandardOutput $probeOut `
+                                  -RedirectStandardError $probeErr -NoNewWindow -Wait -PassThru
+            $exitCode = $proc.ExitCode
+            if (Test-Path -LiteralPath $probeErr) { $detail = ([IO.File]::ReadAllText($probeErr)).Trim() }
+        } catch { $detail = $_.Exception.Message }
         finally {
             # Pemulihan dibungkus try/catch dikarenakan tanpa konsol (mis. di CI) setter ini bisa gagal, dan itu bukan kesalahan pemasangan.
             try { [Console]::InputEncoding = $savedInputEncoding; [Console]::OutputEncoding = $savedOutputEncoding } catch { }
         }
-        if (-not $runs) {
-            Fail "program sudah disalin ke $target tetapi tidak bisa dijalankan di komputer ini. Kemungkinan Smart App Control (Windows 11) atau antivirus memblokir program yang tidak ditandatangani; izinkan berkas itu, atau kompilasi sendiri (lihat README)."
+        if ($exitCode -ne 0) {
+            Fail ("program sudah disalin ke $target tetapi tidak bisa dijalankan di komputer ini (kode keluar: $exitCode). " +
+                  'Kemungkinan Smart App Control (Windows 11) atau antivirus memblokir program yang tidak ditandatangani; ' +
+                  "izinkan berkas itu, atau kompilasi sendiri (lihat README). Detail: $detail")
         }
         Say "Terpasang: $target ($version)"
     } finally {
