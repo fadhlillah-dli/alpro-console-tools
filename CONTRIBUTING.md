@@ -12,4 +12,4 @@ Terima kasih sudah tertarik ikut mengembangkan proyek ini. Alurnya singkat:
    persegi sisi 14 dengan π = 22/7 (42.00 cm²), dan input salah ditolak dengan pesan yang jelas.
 5. Kirim pull request dengan penjelasan singkat: apa yang diubah dan mengapa.
 
-Laporan bug dan ide fitur silakan lewat tab Issues.
+Laporan bug dan ide fitur silakan lewat tab Issues; masalah keamanan dilaporkan secara privat, lihat `SECURITY.md`.

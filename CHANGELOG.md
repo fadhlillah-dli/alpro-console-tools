@@ -13,6 +13,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   paket zip dihapus dari README.
 - Paket rilis kini hanya berisi program, README, dan LICENSE.
 
+### Keamanan
+- Workflow: token `GITHUB_TOKEN` hanya-baca di seluruh CI dan di job build rilis, izin tulis hanya pada job publish;
+  `persist-credentials: false` pada checkout; semua action dipin ke commit SHA penuh dan diperbarui Dependabot;
+  rilis dibuat dengan `gh release create` tanpa action pihak ketiga; cache toolchain MSYS2 dimatikan untuk build rilis;
+  pemeriksaan bahwa sumber tidak berubah sejak checkout sebelum kompilasi.
+- `SECURITY.md`: cara melaporkan masalah keamanan secara privat.
+
 ### Dihapus
 - `install.sh`, `install.ps1`, peluncur paket zip (`dist/`), dan langkah formula Homebrew di workflow rilis, dikarenakan
   jalur pakai utama kini `coba.sh`/`coba.ps1` tanpa pemasangan.

@@ -4,12 +4,16 @@ on:
   push:
     tags: ["v*"]
 
+# Token hanya-baca untuk seluruh workflow; izin tulis diberikan khusus pada job publish di bawah, dikarenakan action
+# pihak ketiga di job build (setup-msys2) tidak boleh memegang token yang bisa menulis ke repositori atau rilis.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # Tahap 1: tiap OS mengompilasi dan mengunggah paketnya sebagai artifact (tidak langsung menyentuh halaman Release,
   # dikarenakan tiga job yang menulis ke satu Release bersamaan membuat catatan rilis tergandakan).
+  # Setiap action dipin ke commit SHA penuh (versi ditulis di komentar) dikarenakan tag seperti v2 bisa dipindahkan
+  # oleh siapa pun yang menguasai repositori action itu; Dependabot (.github/dependabot.yml) yang memperbarui pin-nya.
   build:
     name: Paket ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
@@ -24,15 +28,25 @@ jobs:
           - os: windows-latest
             label: windows-x86_64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false  # tidak ada perintah git setelah checkout, jadi token tidak perlu tersimpan di .git/config
 
       - name: Pasang GCC (Windows, MSYS2 UCRT64)
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
           msystem: UCRT64
           update: true
           install: mingw-w64-ucrt-x86_64-gcc zip
+          cache: false  # cache toolchain ditulis oleh run CI lain; paket rilis tidak boleh bergantung pada isi cache itu
+
+      # Memastikan sumber tidak berubah sejak checkout berfungsi untuk menangkap action yang menulis ke workspace sebelum
+      # kompilasi, dikarenakan SHA256SUMS dihitung sesudahnya dan tidak akan mendeteksi perubahan semacam itu.
+      - name: Pastikan sumber tidak berubah sejak checkout
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then git status --porcelain; echo "pohon kerja berubah setelah checkout"; exit 1; fi
 
       - name: "Kompilasi macOS (universal: Apple Silicon + Intel)"
         if: runner.os == 'macOS'
@@ -62,7 +76,7 @@ jobs:
           cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
 
       - name: Simpan paket sebagai artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: paket-${{ matrix.label }}
           path: |
@@ -75,9 +89,11 @@ jobs:
     name: Terbitkan Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # satu-satunya job yang menulis: membuat rilis dan mengunggah aset
     steps:
       - name: Ambil semua paket
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: paket
           merge-multiple: true
@@ -85,8 +101,11 @@ jobs:
       - name: Buat daftar SHA-256 semua paket
         run: cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
 
+      # Menggunakan gh CLI bawaan runner berfungsi untuk membuat rilis tanpa action pihak ketiga, dikarenakan job ini
+      # satu-satunya pemegang token tulis dan kode pihak ketiga tidak boleh berjalan dengannya. --verify-tag menolak
+      # membuat rilis bila tag belum ada di repositori (tag selalu didorong pemilik lebih dulu).
       - name: Unggah ke halaman Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: paket/*
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" paket/* --verify-tag --generate-notes

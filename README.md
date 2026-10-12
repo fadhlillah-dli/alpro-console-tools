@@ -143,7 +143,7 @@ alpro-console-tools/
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI
 ├── coba.sh · coba.ps1               jalankan sekali tanpa memasang: unduh ke folder sementara, jalankan, hapus
 ├── Makefile · jalankan.command · jalankan.bat
-├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
+├── CONTRIBUTING.md · SECURITY.md · CHANGELOG.md · LICENSE
 └── README.md
 ```
 

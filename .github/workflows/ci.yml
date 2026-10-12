@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:  # berfungsi agar CI bisa dijalankan manual pada branch mana pun (gh workflow run ci.yml --ref <branch>)
 
+# Token hanya-baca, dikarenakan CI tidak pernah menulis ke repositori; ditulis eksplisit agar tidak bergantung pada setelan
+# default repositori. Action dipin ke commit SHA penuh (versi di komentar), diperbarui lewat Dependabot.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build (${{ matrix.os }})
@@ -15,11 +20,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Pasang GCC (Windows, MSYS2 UCRT64)
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
           msystem: UCRT64
           update: true
