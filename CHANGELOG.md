@@ -2,12 +2,14 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.6] - 2026-10-13
 
 ### Ditambahkan
 - Paket Linux aarch64 (ARM64, tautan statis penuh) dibangun di runner `ubuntu-24.04-arm`; `coba.sh` memilih paket dari
   `uname -m` (x86_64 atau aarch64/arm64) dan memberi pesan jelas bila rilis belum memuat paketnya; CI juga berjalan di
-  runner ARM (build, uji asap, biner statis).
+  runner ARM (build, uji asap, biner statis, coba.sh).
+- Dry-run jalur rilis: `release.yml` bisa dijalankan lewat `workflow_dispatch` (membangun empat paket dan daftar SHA-256
+  tanpa membuat rilis); runner Linux dipin ke `ubuntu-24.04` untuk kedua arsitektur.
 
 ### Diubah
 - Komentar sumber mengikuti pola pemilik: kata kunci dijelaskan di atas kemunculan pertamanya, tiap baris kode diberi
