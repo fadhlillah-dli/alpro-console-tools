@@ -105,20 +105,24 @@ jobs:
 
       # Kompilasi silang untuk Android (bionic) dengan clang NDK bawaan runner x86_64 berfungsi membuktikan sumber bersih
       # -Werror di clang NDK dan ELF-nya PIE dinamis dengan interpreter linker64, dikarenakan runner tidak bisa menjalankan
-      # biner Android; uji jalan paket android-aarch64 dilakukan di perangkat (Termux).
+      # biner Android; uji jalan paket android-aarch64 dilakukan di kontainer bionic sebelum rilis dan di perangkat (Termux).
       - name: Kompilasi Android aarch64 (NDK, pemeriksaan ELF saja)
         if: matrix.os == 'ubuntu-24.04'
         shell: bash
         run: |
+          [ "$(uname -m)" = "x86_64" ] || { echo "langkah Android memakai toolchain prebuilt/linux-x86_64; runner ini $(uname -m)"; exit 1; }
           ndk="$ANDROID_NDK_LATEST_HOME"; [ -d "$ndk" ] || { echo "NDK tidak ada di runner"; exit 1; }
+          grep -h 'Pkg.Revision' "$ndk/source.properties" || true
           cxx="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
           "$cxx" --version | head -1
-          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -o tugas_alpro_android src/*.cpp
+          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -s -o tugas_alpro_android src/*.cpp
           file tugas_alpro_android
           readelf -h tugas_alpro_android | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner Android bukan PIE"; exit 1; }
           readelf -lW tugas_alpro_android | grep -q 'interpreter: /system/bin/linker64' || { echo "interpreter bukan linker64"; exit 1; }
-          [ "$(readelf -dW tugas_alpro_android | grep -c 'libc++_shared')" -eq 0 ] || { echo "masih butuh libc++_shared.so"; exit 1; }
-          echo "Biner Android OK (ELF)"
+          needed=$(readelf -dW tugas_alpro_android | awk '/NEEDED/ {print $5}' | tr -d '[]' | sort | tr '\n' ' ')
+          [ "$needed" = "libc.so libdl.so libm.so " ] || { echo "NEEDED bukan tepat libc.so libdl.so libm.so: $needed"; exit 1; }
+          [ "$(stat -c %s tugas_alpro_android)" -lt 1048576 ] || { echo "biner Android lebih dari 1 MiB"; exit 1; }
+          echo "Biner Android OK (ELF, NEEDED: $needed)"
 
       # Dijalankan di shell MSYS2 dikarenakan biner CI tidak ditautkan statis dan membutuhkan DLL libstdc++ dari PATH MSYS2.
       - name: Uji asap (Windows)

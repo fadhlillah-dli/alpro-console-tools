@@ -2,7 +2,7 @@
 
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#menjalankan)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows%20%7C%20Android%20(Termux)-lightgrey)](#menjalankan)
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
 Program konsol C++ untuk praktikum **Algoritma & Pemrograman (Modul 1: Input dan Output)**: rekap nilai
@@ -61,7 +61,7 @@ Satu perintah, tanpa memasang apa pun: paket rilis terbaru diunduh ke folder sem
 lalu foldernya dihapus begitu program ditutup (juga bila dihentikan dengan Ctrl+C). Tidak perlu hak Administrator, tidak
 ada dialog Gatekeeper atau SmartScreen, dan PATH tidak disentuh.
 
-macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM; paket aarch64 ada sejak v1.0.6), dan Android lewat Termux (aarch64; `pkg install curl` sekali; paket android ada sejak v1.0.7), di Terminal:
+macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM; paket aarch64 ada sejak v1.0.6), dan Android lewat Termux (aarch64; `pkg install curl` bila belum ada; paket android ada sejak v1.0.7; layar ponsel tegak biasanya kurang dari 50 kolom, jadi putar ke lanskap atau perkecil font), di Terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
@@ -82,6 +82,9 @@ Syarat: compiler C++17 (`g++` atau `clang++`).
 
 - macOS: `xcode-select --install`
 - Linux (Debian/Ubuntu): `sudo apt install build-essential`
+- Android (Termux): `pkg install clang git`, lalu `git clone https://github.com/fadhlillah-dli/alpro-console-tools && cd alpro-console-tools`
+  dan `clang++ -std=c++17 -O2 -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp && ./tugas_alpro` (paket siap pakai untuk
+  aarch64 diambil otomatis oleh perintah di bagian Menjalankan).
 - Windows: pasang [MSYS2](https://www.msys2.org/), lalu `pacman -S mingw-w64-ucrt-x86_64-gcc` dan tambahkan
   `C:\msys64\ucrt64\bin` ke PATH.
 

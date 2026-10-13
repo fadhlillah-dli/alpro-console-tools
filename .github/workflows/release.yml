@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
-  # workflow_dispatch berfungsi untuk dry-run jalur rilis (build empat paket + daftar SHA-256) tanpa membuat rilis,
+  # workflow_dispatch berfungsi untuk dry-run jalur rilis (build lima paket + daftar SHA-256) tanpa membuat rilis,
   # dikarenakan tag yang sudah didorong tidak bisa dipindah dan rilis yang terbit tidak bisa diubah; jalankan dengan
   # gh workflow run release.yml --ref <branch> setelah setiap perubahan berkas ini atau pin action yang dipakainya.
   workflow_dispatch:
@@ -39,8 +39,8 @@ jobs:
             arch: aarch64
           # Paket Android (Termux) dibangun dengan NDK bawaan runner x86_64 untuk bionic (PIE dinamis dengan interpreter
           # /system/bin/linker64), dikarenakan paket glibc statis mana pun tidak bisa jalan di Termux: termux-exec memuat
-          # program lewat linker Android (menolak ET_EXEC, lalu gagal merelokasi static-pie glibc) dan seccomp aplikasi
-          # Android menjebak set_robust_list/rseq yang dipanggil glibc saat mulai.
+          # program lewat linker Android (menolak ET_EXEC "has unexpected e_type: 2", dan menolak static-pie glibc yang
+          # tanpa PT_PHDR) dan seccomp aplikasi Android menjebak set_robust_list/rseq yang dipanggil glibc saat mulai.
           - os: ubuntu-24.04
             label: android-aarch64
             arch: x86_64
@@ -106,21 +106,27 @@ jobs:
       # Kompilasi silang untuk Android dengan clang NDK berfungsi menghasilkan PIE dinamis bionic (interpreter
       # /system/bin/linker64) yang hanya bergantung pada pustaka sistem Android, dikarenakan libc++ ditautkan statis
       # (-static-libstdc++). Runner tidak bisa menjalankan biner Android, jadi di sini hanya ELF-nya yang diperiksa; uji
-      # jalan dilakukan di perangkat (Termux) dan dicatat di CHANGELOG.
+      # jalan dilakukan di kontainer bionic (termux-docker; Android 14 lewat linker64 dengan filter seccomp aplikasi)
+      # sebelum rilis, dan hasil uji di perangkat dicatat di CHANGELOG. Biner di-strip (-s) agar paket di bawah 1 MB.
+      # Versi NDK mengikuti image runner (seperti GCC di runner Linux) dan dicetak agar tercatat di log.
       - name: Kompilasi Android aarch64 (NDK, bionic; pemeriksaan ELF saja)
         if: matrix.label == 'android-aarch64'
         shell: bash
         run: |
+          [ "$(uname -m)" = "x86_64" ] || { echo "langkah Android memakai toolchain prebuilt/linux-x86_64; runner ini $(uname -m)"; exit 1; }
           ndk="$ANDROID_NDK_LATEST_HOME"; [ -d "$ndk" ] || { echo "NDK tidak ada di runner"; exit 1; }
+          grep -h 'Pkg.Revision' "$ndk/source.properties" || true
           cxx="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
           "$cxx" --version | head -1
-          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -o tugas_alpro src/*.cpp
+          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -s -o tugas_alpro src/*.cpp
           file tugas_alpro
           readelf -h tugas_alpro | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner Android bukan PIE"; exit 1; }
           readelf -lW tugas_alpro | grep -q 'interpreter: /system/bin/linker64' || { echo "interpreter bukan linker64 Android"; exit 1; }
           needed=$(readelf -dW tugas_alpro | awk '/NEEDED/ {print $5}' | tr -d '[]' | sort | tr '\n' ' ')
           echo "NEEDED: $needed"
-          [ "$(echo "$needed" | grep -c 'libc++_shared')" -eq 0 ] || { echo "masih butuh libc++_shared.so"; exit 1; }
+          # Daftar putih persis, dikarenakan pustaka selain libc/libdl/libm tidak dijamin terlihat dari Termux.
+          [ "$needed" = "libc.so libdl.so libm.so " ] || { echo "NEEDED bukan tepat libc.so libdl.so libm.so"; exit 1; }
+          [ "$(stat -c %s tugas_alpro)" -lt 1048576 ] || { echo "biner Android lebih dari 1 MiB; strip gagal?"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           tar -czf "alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.tar.gz" -C paket .
 
@@ -177,7 +183,24 @@ jobs:
           merge-multiple: true
 
       - name: Buat daftar SHA-256 semua paket
-        run: cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
+        run: |
+          cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
+          # Jumlah berkas diperiksa SEBELUM rilis dibuat, dikarenakan rilis immutable tidak bisa dibetulkan setelah terbit.
+          [ "$(ls | wc -l)" -eq 6 ] || { echo "jumlah berkas bukan 6 (5 paket + SHA256SUMS)"; exit 1; }
+
+      # Catatan rilis diambil dari bagian CHANGELOG untuk versi ini (dibaca lewat API dari tag yang sama), dikarenakan
+      # catatan otomatis GitHub hanya mendaftar judul commit; bila bagian itu tidak ditemukan, rilis tetap dibuat dengan
+      # catatan otomatis saja dan peringatan dicetak.
+      - name: Siapkan catatan rilis dari CHANGELOG
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          gh api -H 'Accept: application/vnd.github.raw' "repos/$GH_REPO/contents/CHANGELOG.md?ref=$GITHUB_REF_NAME" \
+            | awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {f=1; next} f && /^## \[/ {exit} f' > catatan.md || true
+          if [ -s catatan.md ]; then echo "catatan rilis dari CHANGELOG [$v]:"; cat catatan.md
+          else echo "::warning::bagian [$v] tidak ditemukan di CHANGELOG; memakai catatan otomatis saja"; rm -f catatan.md; fi
 
       # Menggunakan gh CLI bawaan runner berfungsi untuk membuat rilis tanpa action pihak ketiga, dikarenakan job ini
       # satu-satunya pemegang token tulis dan kode pihak ketiga tidak boleh berjalan dengannya. --verify-tag menolak
@@ -186,4 +209,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" paket/* --verify-tag --generate-notes
+        run: |
+          if [ -s catatan.md ]; then gh release create "$GITHUB_REF_NAME" paket/* --verify-tag --generate-notes --notes-file catatan.md
+          else gh release create "$GITHUB_REF_NAME" paket/* --verify-tag --generate-notes; fi

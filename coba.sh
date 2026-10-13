@@ -19,13 +19,13 @@ main() {
   os="$(uname -s)"
   # Termux (Android) dideteksi lebih dulu, dikarenakan uname -s di sana juga "Linux" padahal paket glibc tidak bisa
   # jalan di Android: termux-exec memuat program lewat linker Android dan seccomp aplikasi menjebak syscall mulai glibc.
-  # uname -o memberi "Android" di Termux; macOS tidak punya opsi -o, maka galatnya dibuang.
+  # uname -o memberi "Android" di Termux ("Darwin" di macOS, "GNU/Linux" di Linux); galat dibuang untuk uname lama tanpa -o.
   if [ "$(uname -o 2>/dev/null)" = "Android" ] || [ -n "${TERMUX_VERSION:-}" ]; then os="Android"; fi
   case "$os" in
     Darwin) label="macos-universal"; ext="zip" ;;
     Android)
       arch="$(uname -m)"
-      [ "$arch" = "aarch64" ] || die "paket Android hanya tersedia untuk aarch64 (arsitektur ini: $arch). Kompilasi sendiri di Termux: pkg install clang libc++ git, lalu clang++ -std=c++17 -O2 -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp"
+      [ "$arch" = "aarch64" ] || die "paket Android hanya tersedia untuk aarch64 (arsitektur ini: $arch). Kompilasi sendiri di Termux: lihat README bagian Kompilasi sendiri."
       label="android-aarch64"; ext="tar.gz" ;;
     Linux)
       # Nama arsitektur dari uname -m dipetakan ke label paket, dikarenakan rilis Linux ada dua: x86_64 (PC/laptop/server

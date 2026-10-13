@@ -5,10 +5,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
-- Paket Android aarch64 (Termux) dibangun dengan clang NDK untuk bionic: PIE dinamis dengan interpreter
-  `/system/bin/linker64` dan libc++ statis; `coba.sh` mendeteksi Termux (`uname -o` = Android atau `TERMUX_VERSION`) dan
-  memilih paket itu. Paket glibc (`linux-*`) tidak bisa jalan di Termux ("has unexpected e_type: 2" pada v1.0.6):
-  termux-exec memuatnya lewat linker Android dan seccomp aplikasi menjebak syscall mulai glibc.
+- Paket Android aarch64 (Termux) dibangun dengan clang NDK (r30, clang 21) untuk bionic: PIE dinamis dengan interpreter
+  `/system/bin/linker64`, libc++ statis, di-strip (paket sekitar 0,2 MB); `coba.sh` mendeteksi Termux (`uname -o` = Android
+  atau `TERMUX_VERSION`) dan memilih paket itu. Paket glibc (`linux-*`) tidak bisa jalan di Termux ("has unexpected
+  e_type: 2" pada v1.0.6): termux-exec memuatnya lewat linker Android dan seccomp aplikasi menjebak syscall mulai glibc.
+  Diuji sebelum rilis di kontainer bionic (termux-docker Android 9; Android 14 lewat linker64 mode exec dengan filter
+  seccomp aplikasi): ketiga uji asap lulus dan input salah ditolak; hasil uji di perangkat Termux dicatat di rilis berikutnya.
+- Catatan rilis diambil dari bagian CHANGELOG versi itu; jumlah berkas (lima paket + SHA256SUMS) diperiksa sebelum rilis dibuat.
 
 ### Diubah
 - Paket Linux (x86_64 dan aarch64) ditautkan `-static-pie` (tetap statis penuh, ditambah ASLR); workflow memeriksa tipe
