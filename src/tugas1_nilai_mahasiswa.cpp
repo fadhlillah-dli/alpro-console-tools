@@ -80,14 +80,14 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     constexpr double SCORE_MAX = 100.0;  // SCORE_MAX = 100.0 adalah batas atas nilai, karena skala nilai mata kuliah 0-100.
 
     // Enam konstanta di bawah adalah lebar kolom tabel, lebar garis judul, dan batas panjang teks, semuanya dalam satuan karakter.
-    // Lebar yang diberikan ke std::setw (BAGIAN 5) bertipe int; TITLE_WIDTH juga int, karena ia hanya menjadi panjang garis dan tidak dibandingkan dengan apa pun.
+    // Lebar yang diberikan ke std::setw (BAGIAN 5) bertipe int; TITLE_WIDTH juga int, karena di printRule() (BAGIAN 3) ia dibandingkan dengan terminalWidth() yang juga int.
     // Lebar yang dibandingkan dengan hasil displayWidth() (BAGIAN 3) bertipe std::size_t,
     // dikarenakan membandingkan bilangan bertanda (int) dengan tak bertanda (std::size_t) memunculkan peringatan compiler.
     constexpr int         NO_COLUMN_WIDTH    = 5;   // NO_COLUMN_WIDTH    = 5 adalah lebar kolom nomor urut ("No"); int karena diberikan ke std::setw di formatTableRow() (BAGIAN 5).
     // std::size_t adalah tipe bilangan bulat tanpa tanda negatif yang dipakai C++ untuk ukuran dan panjang (berasal dari <cstddef>).
     constexpr std::size_t NAME_COLUMN_MIN_WIDTH    = 20;  // NAME_COLUMN_MIN_WIDTH    = 20 adalah lebar minimal kolom nama; std::size_t karena dibandingkan dengan hasil displayWidth() di run() (BAGIAN 6).
     constexpr int         SCORE_COLUMN_WIDTH = 8;   // SCORE_COLUMN_WIDTH = 8 adalah lebar kolom nilai ("Nilai"); int karena diberikan ke std::setw.
-    constexpr int         TITLE_WIDTH       = 60;  // TITLE_WIDTH       = 60 adalah jumlah karakter '=' pada garis judul; dipakai sebagai panjang garis di std::string(TITLE_WIDTH, ch) di printRule() (BAGIAN 3).
+    constexpr int         TITLE_WIDTH       = 60;  // TITLE_WIDTH       = 60 adalah jumlah karakter '=' pada garis judul; dipakai printRule() (BAGIAN 3).
     constexpr std::size_t NAME_MAX_LENGTH = 60;  // NAME_MAX_LENGTH = 60 adalah batas panjang nama mahasiswa; lebih panjang dari ini hampir pasti tempelan teks, bukan nama. Dipakai isValidPersonName() di BAGIAN 4.
     constexpr std::size_t COURSE_NAME_MAX_LENGTH = 60;  // COURSE_NAME_MAX_LENGTH = 60 adalah batas panjang nama mata kuliah, alasan yang sama. Dipakai isValidCourseName() di BAGIAN 4.
 
@@ -213,7 +213,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
 
     int terminalWidth() { // terminalWidth() berfungsi untuk menanyakan lebar jendela terminal (dalam kolom) setiap kali dipanggil, jadi tampilan ikut menyesuaikan bila jendela diubah ukurannya.
     // Bila terminal tidak bisa ditanya (keluaran bukan terminal), dicoba variabel lingkungan COLUMNS; bila itu juga tidak ada, dipakai 80 kolom, ukuran bawaan terminal pada umumnya.
-    // Hasilnya int dan tidak pernah di bawah 50, karena di bawah 50 kolom tabel tidak bisa rapi. Dipakai oleh drawBox() dan printError() di bawah.
+    // Hasilnya int dan tidak pernah di bawah 40, karena di bawah 40 kolom tabel rekap tidak muat lagi; 40 cukup untuk Termux tegak di ponsel (sekitar 46 kolom). Dipakai oleh drawBox(), printError(), dan printRule() di bawah.
         int cols = 0;  // cols = 0 artinya lebar belum diketahui.
     #ifdef _WIN32 // _WIN32: cara bertanya ke terminal berbeda di Windows dan macOS/Linux, jadi dipilih lagi; bagian sampai #else hanya untuk Windows.
         // CONSOLE_SCREEN_BUFFER_INFO adalah struct milik Windows; tanda titik (.) berfungsi untuk mengambil salah satu anggotanya.
@@ -231,7 +231,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
         // env menunjuk ke teksnya, atau bernilai nullptr bila COLUMNS tidak ada.
         if (cols <= 0) cols = 80;  // cols = 80 adalah lebar bawaan bila lebar tetap belum diketahui.
         // std::max berfungsi untuk memilih yang lebih besar dari dua nilai (berasal dari <algorithm>).
-        return std::max(50, cols);  // std::max(50, cols) artinya hasilnya tidak pernah di bawah 50 kolom.
+        return std::max(40, cols);  // std::max(40, cols) artinya hasilnya tidak pernah di bawah 40 kolom.
     }  // akhir fungsi terminalWidth()
 
     // std::vector<std::string> adalah daftar berurutan berisi teks; di sini menjadi tipe hasil fungsi, satu elemen untuk satu baris. Tipe isi vector ditulis di antara < >.
@@ -239,12 +239,16 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) { // wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent)
     // berfungsi untuk memotong text di spasi menjadi beberapa baris yang masing-masing muat dalam maxWidth kolom, supaya terminal tidak memotongnya sembarangan.
     // Baris lanjutan diberi indentasi gantung sebanyak hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox() dan printError() di bawah.
+    // Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong tepat di batas lebar.
         std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
         std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
         // while berfungsi untuk mengulang isi blok selama syarat di dalam kurung masih benar.
         while (displayWidth(remaining) > maxWidth) { // displayWidth(remaining) > maxWidth artinya sisa teks masih lebih lebar dari maxWidth, jadi potong satu baris lagi dari depannya.
             std::size_t col = 0, cutPos = std::string::npos; // col menghitung kolom layar, dan cutPos menyimpan posisi spasi tempat memotong; std::string::npos adalah nilai khusus yang berarti "tidak ditemukan" (belum ada spasi).
+            std::size_t looseCutPos = std::string::npos, hardCutPos = std::string::npos; // looseCutPos dan hardCutPos adalah dua titik potong cadangan, mula-mula std::string::npos (belum ada):
+            // looseCutPos = spasi terakhir setelah teks dimulai, hardCutPos = posisi byte tempat batas lebar tercapai. Keduanya dipakai setelah perulangan for di bawah.
+            bool seenText = false; // seenText = false: nilainya menjadi true begitu bertemu karakter pertama yang bukan spasi, supaya spasi indentasi di depan baris tidak dipakai sebagai titik potong.
             bool inEscape = false;  // inEscape = false: nilainya true selama berada di dalam kode warna, yang tidak memakai kolom.
             // for (awal; syarat; langkah) adalah perulangan for biasa: mulai dari awal, berulang selama syarat benar, dan menjalankan langkah setiap selesai satu putaran.
             for (std::size_t i = 0; i < remaining.size(); ++i) { // for (std::size_t i = 0; i < remaining.size(); ++i) artinya periksa setiap byte remaining dari posisi 0 sampai terakhir untuk mencari
@@ -256,14 +260,26 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                 if (c == 0x1B) { inEscape = true; continue; }  // c == 0x1B artinya ESC, awal kode warna.
                 if ((c & 0xC0) == 0x80) continue;  // (c & 0xC0) == 0x80 artinya byte lanjutan UTF-8; ia bukan karakter baru, jadi tidak menambah kolom.
                 // break berfungsi untuk keluar dari perulangan saat itu juga.
-                if (col >= maxWidth) break;  // col >= maxWidth artinya batas lebar tercapai, jadi berhenti mencari.
+                if (col >= maxWidth) { hardCutPos = i; break; } // col >= maxWidth artinya batas lebar tercapai: hardCutPos = i mencatat posisi byte ini untuk potongan paksa, lalu break berhenti mencari.
                 if (c == ' ' && col > hangingIndent) cutPos = i;  // c == ' ' && col > hangingIndent artinya spasi ini menjadi calon titik potong, asalkan letaknya setelah indentasi gantung;
                 // yang akhirnya tersimpan adalah spasi terakhir sebelum batas lebar.
+                if (c == ' ' && seenText) looseCutPos = i; // c == ' ' && seenText artinya spasi ini ada setelah teks dimulai, jadi dicatat sebagai titik potong cadangan looseCutPos.
+                if (c != ' ') seenText = true; // c != ' ' artinya karakter ini bukan spasi, jadi seenText = true: teks di baris ini sudah dimulai.
                 ++col;  // ++col; artinya karakter ini memakai satu kolom.
             }  // akhir perulangan mencari titik potong
-            if (cutPos == std::string::npos) break;  // cutPos == std::string::npos artinya tidak ada spasi untuk memotong: keluar dari while dan biarkan sisa teks apa adanya.
-            result.push_back(remaining.substr(0, cutPos)); // remaining.substr(0, cutPos) mengambil teks dari awal sampai sebelum spasi, lalu push_back menambahkannya ke ujung result.
-            remaining = std::string(hangingIndent, ' ') + remaining.substr(cutPos + 1); // std::string(hangingIndent, ' ') adalah hangingIndent buah spasi, disambung dengan sisa teks mulai setelah spasi (cutPos + 1).
+            // Bila tidak ada spasi setelah indentasi gantung (misalnya angka hasil yang sangat panjang setelah label), dipakai spasi cadangan.
+            if (cutPos == std::string::npos && looseCutPos != std::string::npos) { cutPos = looseCutPos; hangingIndent = 2; } // cutPos == std::string::npos && looseCutPos != std::string::npos
+            // artinya hanya ada spasi cadangan: cutPos = looseCutPos memotong di sana, dan hangingIndent = 2 membuat lanjutannya cukup menjorok 2 spasi supaya isinya muat.
+            if (cutPos != std::string::npos) { // cutPos != std::string::npos artinya ada spasi untuk memotong: spasinya dibuang dan sisa teks pindah ke baris berikutnya.
+                result.push_back(remaining.substr(0, cutPos)); // remaining.substr(0, cutPos) mengambil teks dari awal sampai sebelum spasi, lalu push_back menambahkannya ke ujung result.
+                remaining = std::string(hangingIndent, ' ') + remaining.substr(cutPos + 1); // std::string(hangingIndent, ' ') adalah hangingIndent buah spasi, disambung dengan sisa teks mulai setelah spasi (cutPos + 1).
+            } else if (hardCutPos != std::string::npos && maxWidth > hangingIndent) { // hardCutPos != std::string::npos && maxWidth > hangingIndent artinya tidak ada spasi sama sekali, jadi satu kata
+            // lebih panjang dari satu baris; kata itu dipotong tepat di batas lebar. Syarat maxWidth > hangingIndent menjamin setiap putaran memotong sedikitnya satu huruf, jadi perulangan pasti selesai.
+                result.push_back(remaining.substr(0, hardCutPos)); // remaining.substr(0, hardCutPos) mengambil teks dari awal sampai batas lebar, lalu push_back menambahkannya ke ujung result.
+                remaining = std::string(hangingIndent, ' ') + remaining.substr(hardCutPos); // remaining.substr(hardCutPos) adalah sisa kata mulai tepat di batas lebar; tidak ada huruf yang dibuang.
+            } else { // else artinya tidak ada titik potong yang aman sama sekali.
+                break; // break; keluar dari while dan membiarkan sisa teks apa adanya.
+            } // akhir pemilihan titik potong
         }  // akhir perulangan while
         result.push_back(remaining);  // result.push_back(remaining); artinya sisa terakhir sudah muat, jadi ia menjadi baris terakhir.
         return result; // return result; mengembalikan daftar baris hasil.
@@ -276,25 +292,36 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     // Dipakai oleh printInstructions() di BAGIAN 5 dan run() di BAGIAN 6.
         const std::size_t maxWidth = static_cast<std::size_t>(terminalWidth() - 5); // terminalWidth() - 5 adalah lebar isi terbesar: lebar terminal dikurangi 2 tepi kotak, 2 margin, dan 1 kolom cadangan;
         // kolom cadangan perlu karena sebagian terminal menambah baris kosong bila sebuah baris persis selebar jendela. static_cast<std::size_t> mengubah hasil int menjadi std::size_t.
+        // Judul yang lebih lebar dari garis atas (bisa terjadi di terminal sempit) dilipat per kata: potongan pertama di garis atas, sisanya di baris isi pertama.
+        const std::vector<std::string> titleLines = wrapText(std::string(title), maxWidth - 2, 0); // wrapText(std::string(title), maxWidth - 2, 0) melipat judul tanpa indentasi gantung;
+        // maxWidth - 2 karena garis atas "┌─ judul ─┐" butuh 4 kolom di luar judul, sedangkan lebar dalam kotak paling besar maxWidth + 2. Judul yang muat tetap satu potongan.
+        const std::string& titleTop = titleLines[0]; // titleLines[0] adalah potongan judul pertama (titleTop), yang ditulis di garis atas kotak.
         std::vector<std::string> contentLines;  // contentLines adalah baris isi setelah dibungkus, siap digambar; bisa lebih banyak dari lines.
+        for (std::size_t i = 1; i < titleLines.size(); ++i) contentLines.push_back(" " + colorize(ANSI_TITLE, titleLines[i])); // titleLines.size() adalah jumlah potongan judul; mulai dari i = 1 artinya potongan ke-2 dan seterusnya (bila ada)
+        // menjadi baris isi pertama, cyan tebal seperti judul, dan didahului 1 spasi supaya lurus dengan judul di garis atas.
         for (const std::string& b : lines) { // for (const std::string& b : lines) artinya ambil setiap baris b di lines tanpa menyalinnya, lalu tentukan indentasi gantungnya dan bungkus dengan wrapText().
             std::size_t hangingIndent = 2;  // hangingIndent = 2 adalah bawaan: baris lanjutan menjorok 2 spasi.
             const std::size_t labelPos = b.find(" : ");  // b.find(" : ") mencari posisi " : " pertama, atau std::string::npos bila tidak ada.
+            const std::size_t leadingSpaces = b.find_first_not_of(' '); // b.find_first_not_of(' ') berfungsi untuk mencari posisi karakter pertama yang bukan spasi, yaitu banyaknya spasi di depan baris;
+            // hasilnya std::string::npos bila barisnya kosong atau hanya berisi spasi.
             if (labelPos != std::string::npos && displayWidth(b.substr(0, labelPos)) <= 28) { // labelPos != std::string::npos && ... <= 28 artinya ada " : " dan label di depannya paling lebar 28 kolom,
             // jadi baris ini berpola "Label : isi"; label yang lebih lebar akan membuat lanjutan menjorok terlalu jauh, jadi tetap 2 spasi.
                 hangingIndent = displayWidth(b.substr(0, labelPos)) + 3;  // displayWidth(b.substr(0, labelPos)) + 3 artinya lebar label ditambah 3 untuk " : ", jadi lanjutannya sejajar dengan isi setelah " : ".
-            } // akhir pemeriksaan pola "Label : isi"
+            } else if (leadingSpaces != std::string::npos && leadingSpaces > 2) { // leadingSpaces != std::string::npos && leadingSpaces > 2 artinya bukan pola "Label : isi", tetapi barisnya
+            // sudah menjorok lebih dari 2 spasi (misalnya keterangan menu atau contoh di kotak petunjuk).
+                hangingIndent = leadingSpaces; // hangingIndent = leadingSpaces artinya lanjutannya menjorok sejauh baris itu sendiri, supaya tetap lurus di bawahnya.
+            } // akhir pemeriksaan pola "Label : isi" dan indentasi baris
             for (const std::string& piece : wrapText(b, maxWidth, hangingIndent)) contentLines.push_back(piece); // wrapText(b, maxWidth, hangingIndent) memotong b, lalu setiap potongan (piece) dimasukkan ke contentLines.
         }  // akhir perulangan membungkus baris isi
-        std::size_t width = displayWidth(title) + 4;  // displayWidth(title) + 4 adalah lebar dalam minimal: "─ " sebelum judul (2), spasi setelah judul (1), dan paling sedikit satu ─ pengisi (1).
+        std::size_t width = displayWidth(titleTop) + 4;  // displayWidth(titleTop) + 4 adalah lebar dalam minimal: "─ " sebelum judul (2), spasi setelah judul (1), dan paling sedikit satu ─ pengisi (1).
         for (const std::string& b : contentLines) width = std::max(width, displayWidth(b) + 2); // std::max(width, displayWidth(b) + 2) artinya kotak diperlebar sampai baris terpanjang + 2, yaitu margin kiri dan kanan.
         // std::min berfungsi untuk memilih yang lebih kecil dari dua nilai (berasal dari <algorithm>).
         width = std::min(width, maxWidth + 2);  // std::min(width, maxWidth + 2) artinya lebar kotak tidak boleh lebih dari maxWidth + 2 margin.
         std::string filler;  // filler adalah garis pengisi di kanan judul, mula-mula kosong.
         // += berfungsi untuk menambahkan teks ke ujung teks yang sudah ada.
-        for (std::size_t i = displayWidth(title) + 3; i < width; ++i) filler += "\u2500"; // filler += "\u2500" artinya tambahkan ─ sebanyak sisa lebar setelah "─ judul ".
+        for (std::size_t i = displayWidth(titleTop) + 3; i < width; ++i) filler += "\u2500"; // filler += "\u2500" artinya tambahkan ─ sebanyak sisa lebar setelah "─ judul ".
         // std::cout << berfungsi untuk mencetak ke layar; beberapa << berurutan mencetak bagian-bagiannya satu per satu dari kiri ke kanan (berbeda dengan << 6 di displayWidth(), yang menggeser bit).
-        std::cout << colorize(ANSI_DIM, "\u250c\u2500 ") << colorize(ANSI_TITLE, title) << colorize(ANSI_DIM, " " + filler + "\u2510") << '\n'; // colorize(ANSI_DIM, "\u250c\u2500 ") ... adalah garis atas ┌─ judul ───┐:
+        std::cout << colorize(ANSI_DIM, "\u250c\u2500 ") << colorize(ANSI_TITLE, titleTop) << colorize(ANSI_DIM, " " + filler + "\u2510") << '\n'; // colorize(ANSI_DIM, "\u250c\u2500 ") ... adalah garis atas ┌─ judul ───┐:
         // garisnya abu-abu dan judulnya cyan tebal; '\n' adalah karakter pindah baris.
         for (const std::string& b : contentLines) { // for (const std::string& b : contentLines) artinya cetak setiap baris isi: │, teks, spasi pengisi sampai lebar kotak, lalu │ lagi.
             const std::string rowText = " " + b;  // " " + b artinya satu spasi margin kiri di depan baris.
@@ -319,8 +346,9 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     } // akhir fungsi printError()
 
     // char adalah tipe satu karakter, ditulis di antara petik tunggal, misalnya '='.
-    void printRule(char ch) { // printRule(char ch) berfungsi untuk mencetak satu garis pembatas abu-abu sepanjang TITLE_WIDTH (60) karakter ch. Dipakai oleh printTitle() di BAGIAN 5.
-        std::cout << colorize(ANSI_DIM, std::string(TITLE_WIDTH, ch)) << '\n'; // std::string(TITLE_WIDTH, ch) membuat teks berisi ch diulang TITLE_WIDTH kali, lalu dicetak abu-abu dan diakhiri pindah baris.
+    void printRule(char ch) { // printRule(char ch) berfungsi untuk mencetak satu garis pembatas abu-abu sepanjang TITLE_WIDTH (60) karakter ch, atau selebar terminal dikurangi 1 kolom cadangan bila terminalnya lebih sempit. Dipakai oleh printTitle() di BAGIAN 5.
+        const std::size_t ruleWidth = static_cast<std::size_t>(std::min(TITLE_WIDTH, terminalWidth() - 1)); // ruleWidth = std::min(TITLE_WIDTH, terminalWidth() - 1) adalah panjang garis: yang lebih kecil antara 60 dan lebar terminal dikurangi 1 kolom cadangan, supaya garis tidak melipat di terminal sempit (misalnya 46 kolom di Termux); static_cast<std::size_t> mengubah hasil int itu menjadi std::size_t, tipe panjang yang diminta std::string.
+        std::cout << colorize(ANSI_DIM, std::string(ruleWidth, ch)) << '\n'; // std::string(ruleWidth, ch) membuat teks berisi ch diulang ruleWidth kali, lalu dicetak abu-abu dan diakhiri pindah baris.
     } // akhir fungsi printRule()
 
     // ===== BAGIAN 4: FUNGSI BANTU INPUT =====
@@ -508,8 +536,11 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
 
     void printTitle(std::string_view text) { // printTitle(std::string_view text) berfungsi untuk mencetak judul program (cyan tebal) di antara dua garis '=' buatan printRule() (BAGIAN 3). Dipanggil oleh run() di BAGIAN 6.
         std::cout << '\n';  // std::cout << '\n'; mencetak satu baris kosong sebelum judul.
-        printRule('='); // printRule('='); mencetak garis '=' sepanjang 60 karakter di atas judul.
-        std::cout << colorize(ANSI_TITLE, "  " + std::string(text)) << '\n';  // colorize(ANSI_TITLE, "  " + std::string(text)) adalah judul cyan tebal yang menjorok 2 spasi; std::string(text) mengubah string_view agar bisa disambung.
+        printRule('='); // printRule('='); mencetak garis '=' sepanjang 60 karakter (atau selebar terminal dikurangi 1 kolom) di atas judul.
+        // Judul dilipat per kata dengan wrapText() (BAGIAN 3) supaya di terminal sempit (misalnya 46 kolom di Termux) tidak terpotong di tengah kata oleh terminal.
+        for (const std::string& piece : wrapText("  " + std::string(text), static_cast<std::size_t>(terminalWidth() - 1), 2)) { // wrapText("  " + std::string(text), terminalWidth() - 1, 2) artinya judul yang menjorok 2 spasi dilipat selebar terminal dikurangi 1, dan baris lanjutannya ikut menjorok 2 spasi; std::string(text) mengubah string_view agar bisa disambung.
+            std::cout << colorize(ANSI_TITLE, piece) << '\n';  // colorize(ANSI_TITLE, piece) mencetak tiap potongan judul cyan tebal, satu potongan per baris.
+        } // akhir perulangan potongan judul
         printRule('='); // printRule('='); mencetak garis '=' lagi di bawah judul.
     } // akhir fungsi printTitle()
 
@@ -576,7 +607,12 @@ namespace task1 { // namespace task1 { membuka wadah bernama task1; ditutup oleh
         // sedangkan studentCount int, jadi diubah dulu dengan static_cast.
 
         // --- Tahap input: isi nama dan nilai setiap mahasiswa ---
-        std::cout << '\n' << colorize(ANSI_TITLE, "Input Nilai " + courseName) << '\n';  // colorize(ANSI_TITLE, "Input Nilai " + courseName) adalah sub-judul cyan tebal berisi nama mata kuliah.
+        std::cout << '\n'; // std::cout << '\n'; mencetak satu baris kosong sebelum sub-judul.
+        // Sub-judul memuat nama mata kuliah yang bisa sampai 60 kolom, jadi dilipat per kata dengan wrapText() (BAGIAN 3); lanjutannya menjorok 12 spasi, lurus dengan nama setelah "Input Nilai ".
+        for (const std::string& piece : wrapText("Input Nilai " + courseName, static_cast<std::size_t>(terminalWidth() - 1), 12)) { // wrapText("Input Nilai " + courseName, ..., 12) memotong sub-judul
+        // sesuai lebar terminal dikurangi 1 kolom cadangan; 12 adalah indentasi gantung.
+            std::cout << colorize(ANSI_TITLE, piece) << '\n'; // colorize(ANSI_TITLE, piece) mencetak potongan sub-judul dengan cyan tebal, lalu pindah baris.
+        } // akhir perulangan sub-judul
         int rowNumber = 1;  // rowNumber = 1 adalah nomor urut mahasiswa, mulai 1 karena manusia menghitung dari 1.
         // Student& (referensi tanpa const) berfungsi agar yang terisi adalah data aslinya di dalam vector, bukan salinannya.
         for (Student& student : students) { // for (Student& student : students) artinya kunjungi setiap mahasiswa di students dan isi datanya langsung.
@@ -596,6 +632,11 @@ namespace task1 { // namespace task1 { membuka wadah bernama task1; ditutup oleh
         }  // akhir perulangan menghitung
         const double average = total / static_cast<double>(students.size()); // total / static_cast<double>(students.size()) adalah rata-rata: total sudah double, jadi hasil baginya desimal (pada int, 11/2 = 5;
         // pada double 5.5); students.size() bertipe std::size_t, jadi diubah ke double dengan static_cast supaya kedua sisi sama-sama double. Jumlah minimal 1 (BAGIAN 2), jadi tidak pernah dibagi nol.
+        // Kolom nama dibatasi supaya tabel selalu muat di kotak rekap: lebar isi kotak (terminalWidth() - 5, sama seperti di drawBox() BAGIAN 3) dikurangi kolom No dan kolom Nilai.
+        // Di terminal 80 kolom batasnya 62, tepat cukup untuk nama terpanjang yang diizinkan (60 kolom + 2 kolom jarak), jadi batas ini hanya terasa di terminal yang lebih sempit; nama yang lebih panjang dari kolomnya dilipat di bawah.
+        const std::size_t nameWidthLimit = static_cast<std::size_t>(terminalWidth() - 5 - NO_COLUMN_WIDTH - SCORE_COLUMN_WIDTH); // nameWidthLimit adalah lebar kolom nama terbesar yang masih muat;
+        // di terminal tersempit (40 kolom) nilainya 22, tetap di atas NAME_COLUMN_MIN_WIDTH (20).
+        nameWidth = std::min(nameWidth, nameWidthLimit); // std::min(nameWidth, nameWidthLimit) artinya kolom nama tidak lebih lebar dari batas itu.
 
         // --- Tahap output: tabel rekap disusun ke vector, lalu digambar dalam satu kotak ---
         const int nameColumnWidth = static_cast<int>(nameWidth); // static_cast<int>(nameWidth) mengubah nameWidth ke int, karena formatTableRow() menerima lebar kolom nama sebagai int dan garis tabel di bawah
@@ -610,8 +651,12 @@ namespace task1 { // namespace task1 { membuka wadah bernama task1; ditutup oleh
         summaryLines.push_back(tableRule);  // summaryLines.push_back(tableRule); menambahkan garis atas tabel.
         rowNumber = 1;  // rowNumber = 1; artinya penomoran tabel dimulai ulang dari 1.
         for (const Student& student : students) { // for (const Student& student : students) artinya satu baris tabel per mahasiswa: nomor, nama, dan nilai dengan 2 desimal.
-            summaryLines.push_back(formatTableRow(std::to_string(rowNumber), student.name, formatTwoDecimals(student.score), nameColumnWidth)); // formatTableRow(std::to_string(rowNumber), student.name, formatTwoDecimals(student.score), nameColumnWidth)
-            // menyusun baris mahasiswa ini; formatTwoDecimals() membuat nilai tampil 2 desimal.
+            const std::vector<std::string> nameLines = wrapText(student.name, nameWidth - 2, 0); // wrapText(student.name, nameWidth - 2, 0) melipat nama per kata supaya muat di kolom nama
+            // (dikurangi 2 kolom jarak ke kolom nilai); nama yang muat tetap satu potongan.
+            summaryLines.push_back(formatTableRow(std::to_string(rowNumber), nameLines[0], formatTwoDecimals(student.score), nameColumnWidth)); // formatTableRow(std::to_string(rowNumber), nameLines[0], ...)
+            // menyusun baris pertama mahasiswa ini: nomor, potongan nama pertama, dan nilai; formatTwoDecimals() membuat nilai tampil 2 desimal.
+            for (std::size_t i = 1; i < nameLines.size(); ++i) summaryLines.push_back(formatTableRow("", nameLines[i], "", nameColumnWidth)); // nameLines.size() adalah jumlah potongan nama; mulai dari i = 1 artinya potongan ke-2
+            // dan seterusnya (bila ada) masing-masing menjadi baris sendiri, dengan kolom No dan kolom Nilai kosong.
             ++rowNumber; // ++rowNumber; artinya nomor berikutnya.
         }  // akhir perulangan baris tabel
         summaryLines.push_back(tableRule);  // summaryLines.push_back(tableRule); menambahkan garis bawah tabel.
@@ -631,7 +676,10 @@ namespace task1 { // namespace task1 { membuka wadah bernama task1; ditutup oleh
 // int main() adalah titik awal program: fungsi yang pertama kali dijalankan saat program dibuka. Standar C++ mewajibkan main bertipe int, yaitu bilangan bulat
 // yang dikirim ke sistem operasi saat program selesai; nilai 0 (lihat return 0 di bawah) menandakan program selesai tanpa error.
 int main() { // main() adalah fungsi utama saat berkas ini dijalankan sendiri sebagai program tugas1.
-    std::cout << colorize(ANSI_BOLD, "Tugas Praktikum 1 - Fadhlillah (2531070011)") << '\n';  // colorize(ANSI_BOLD, "Tugas Praktikum 1 - Fadhlillah (2531070011)") adalah identitas, dicetak tebal.
+    // Baris identitas dilipat per kata dengan wrapText() (BAGIAN 3), supaya di terminal sempit tidak terpotong di tengah kata.
+    for (const std::string& piece : wrapText("Tugas Praktikum 1 - Fadhlillah (2531070011)", static_cast<std::size_t>(terminalWidth() - 1), 0)) { // wrapText("Tugas Praktikum 1 - Fadhlillah (2531070011)", ..., 0) memotong identitas sesuai lebar terminal dikurangi 1 kolom cadangan, tanpa indentasi gantung (0).
+        std::cout << colorize(ANSI_BOLD, piece) << '\n'; // colorize(ANSI_BOLD, piece) mencetak potongan identitas dengan huruf tebal, lalu pindah baris.
+    } // akhir perulangan baris identitas
     task1::run();  // task1::run(); memanggil fungsi run() di dalam namespace task1 (BAGIAN 6); tanda :: berarti "milik".
     return 0; // return 0; mengakhiri main(); 0 berarti selesai tanpa error.
 } // akhir main()

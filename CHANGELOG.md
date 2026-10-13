@@ -2,6 +2,22 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Diperbaiki
+- Tampilan di terminal sempit, misalnya Termux pada ponsel tegak (sekitar 46 kolom): lebar minimal kini 40 kolom
+  (sebelumnya 50), dan tidak ada lagi baris buatan program yang melebihi lebar terminal. Garis judul mengikuti lebar
+  terminal; judul program, judul kotak banner, baris rumus, sub-judul "Input Nilai", dan baris identitas program mandiri
+  dilipat per kata; kanvas sketsa menyisakan ruang untuk panah "S" (program 3) dan catatan "T" (program 2).
+- Tabel rekap program 1 tidak lagi pecah bila nama mahasiswa lebih panjang dari ruang yang tersedia (untuk nama terpanjang,
+  60 karakter, terjadi di bawah 80 kolom): kolom nama dibatasi lebar kotak dan nama panjang dilipat di dalam kolomnya.
+- Pembungkus baris: angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari
+  satu baris dipotong di batas lebar, dan lanjutan baris yang sudah menjorok (contoh di kotak petunjuk, keterangan menu)
+  kini lurus di bawah barisnya, juga di terminal sampai 100 kolom.
+- Diuji di pseudo-terminal 40-200 kolom untuk ketiga program (menu dan mandiri, termasuk nama dan angka panjang): tidak ada
+  baris yang melebihi lebar terminal, uji asap tetap persis, dan di terminal 101 kolom ke atas tampilan sama dengan v1.0.7.
+  Paket android v1.0.7 sudah dicoba pemilik di perangkat Termux dan berjalan; masalah yang terlihat hanya tata letak di atas.
+
 ## [1.0.7] - 2026-10-13
 
 ### Ditambahkan

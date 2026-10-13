@@ -51,8 +51,9 @@ Pilihan Anda [0-3] : 2
   menyebut tindakan yang benar.
 - **Tampilan profesional**: kotak berjudul, warna ANSI (otomatis mati bila keluaran bukan terminal atau
   `NO_COLOR`), petunjuk pengisian, dan sketsa bangun dari karakter Braille yang dihitung dari rumus.
-- **Menyesuaikan lebar terminal** setiap kali layar digambar: teks dibungkus, menu menjadi dua baris, sketsa
-  mengecil, keterangan pindah ke bawah gambar bila jendela sempit.
+- **Menyesuaikan lebar terminal** setiap kali layar digambar, mulai 40 kolom: teks dan judul dibungkus per kata, menu
+  menjadi dua baris, sketsa mengecil, keterangan pindah ke bawah gambar, dan nama panjang dilipat di dalam kolom tabel
+  bila jendela sempit.
 - **Setiap baris berkomentar** (bahasa Indonesia) menjelaskan apa yang dipakai dan mengapa, cocok untuk belajar.
 
 ## Menjalankan
@@ -61,7 +62,7 @@ Satu perintah, tanpa memasang apa pun: paket rilis terbaru diunduh ke folder sem
 lalu foldernya dihapus begitu program ditutup (juga bila dihentikan dengan Ctrl+C). Tidak perlu hak Administrator, tidak
 ada dialog Gatekeeper atau SmartScreen, dan PATH tidak disentuh.
 
-macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM; paket aarch64 ada sejak v1.0.6), dan Android lewat Termux (aarch64; `pkg install curl` bila belum ada; paket android ada sejak v1.0.7; layar ponsel tegak biasanya kurang dari 50 kolom, jadi putar ke lanskap atau perkecil font), di Terminal:
+macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM; paket aarch64 ada sejak v1.0.6), dan Android lewat Termux (aarch64; `pkg install curl` bila belum ada; paket android ada sejak v1.0.7; sejak v1.0.8 tata letak menyesuaikan lebar terminal mulai 40 kolom, jadi layar ponsel tegak pun rapi), di Terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
