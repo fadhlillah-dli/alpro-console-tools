@@ -60,13 +60,20 @@ jobs:
         run: |
           if [ -n "$(git status --porcelain)" ]; then git status --porcelain; echo "pohon kerja berubah setelah checkout"; exit 1; fi
 
+      # Nama versi paket diambil dari nama ref dengan garis miring diganti tanda hubung, dikarenakan pada dry-run
+      # (workflow_dispatch dari branch seperti fitur/linux-aarch64) nama ref memuat garis miring yang membuat tar/zip
+      # mencoba menulis ke folder yang tidak ada; untuk tag (v1.0.6) hasilnya tetap sama persis.
+      - name: Tentukan nama versi paket
+        shell: bash
+        run: echo "PAKET_VERSI=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
+
       - name: "Kompilasi macOS (universal: Apple Silicon + Intel)"
         if: runner.os == 'macOS'
         shell: bash
         run: |
           clang++ -std=c++17 -O2 -DBUILD_WITH_MENU -arch arm64 -arch x86_64 -o tugas_alpro src/*.cpp
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
-          cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
+          cd paket && zip -r "../alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.zip" .
 
       # Menggunakan -static (tautan statis penuh, termasuk glibc) berfungsi agar paket jalan di distro dengan glibc lebih lama
       # dari runner (Ubuntu 22.04, Debian 12, WSL bawaan), dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38.
@@ -82,7 +89,7 @@ jobs:
           out=$(printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro)
           echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
-          tar -czf "alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.tar.gz" -C paket .
+          tar -czf "alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.tar.gz" -C paket .
 
       - name: Kompilasi Windows (statis, tanpa ketergantungan DLL MSYS2)
         if: runner.os == 'Windows'
@@ -90,7 +97,7 @@ jobs:
         run: |
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro.exe src/*.cpp
           mkdir -p paket && cp tugas_alpro.exe README.md LICENSE paket/
-          cd paket && zip -r "../alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.zip" .
+          cd paket && zip -r "../alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.zip" .
 
       - name: Simpan paket sebagai artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
