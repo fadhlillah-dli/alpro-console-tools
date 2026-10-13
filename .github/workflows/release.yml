@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # workflow_dispatch berfungsi untuk dry-run jalur rilis (build empat paket + daftar SHA-256) tanpa membuat rilis,
+  # dikarenakan tag yang sudah didorong tidak bisa dipindah dan rilis yang terbit tidak bisa diubah; jalankan dengan
+  # gh workflow run release.yml --ref <branch> setelah setiap perubahan berkas ini atau pin action yang dipakainya.
+  workflow_dispatch:
 
 # Token hanya-baca untuk seluruh workflow; izin tulis diberikan khusus pada job publish di bawah, dikarenakan action
 # pihak ketiga di job build (setup-msys2) tidak boleh memegang token yang bisa menulis ke repositori atau rilis.
@@ -11,7 +15,7 @@ permissions:
 
 jobs:
   # Tahap 1: tiap OS mengompilasi dan mengunggah paketnya sebagai artifact (tidak langsung menyentuh halaman Release,
-  # dikarenakan tiga job yang menulis ke satu Release bersamaan membuat catatan rilis tergandakan).
+  # dikarenakan empat job yang menulis ke satu Release bersamaan membuat catatan rilis tergandakan).
   # Setiap action dipin ke commit SHA penuh (versi ditulis di komentar) dikarenakan tag seperti v2 bisa dipindahkan
   # oleh siapa pun yang menguasai repositori action itu; Dependabot (.github/dependabot.yml) yang memperbarui pin-nya.
   build:
@@ -23,11 +27,13 @@ jobs:
         include:
           - os: macos-latest
             label: macos-universal
-          - os: ubuntu-latest
+          # Versi Ubuntu dipin sama untuk kedua arsitektur Linux, dikarenakan ubuntu-latest akan berpindah ke 26.04 dan
+          # toolchain yang berbeda antar arsitektur bisa memberi peringatan -Werror hanya di salah satunya.
+          - os: ubuntu-24.04
             label: linux-x86_64
             arch: x86_64
-          # Runner ARM64 GitHub-hosted (gratis untuk repositori publik) berfungsi untuk membangun paket Linux aarch64 secara
-          # native, dikarenakan kompilasi silang tidak bisa menjalankan uji asapnya sendiri.
+          # Runner ARM64 GitHub-hosted (gratis untuk repositori publik) berfungsi untuk membangun paket Linux aarch64
+          # secara native, dikarenakan kompilasi silang tidak bisa menjalankan uji asapnya sendiri.
           - os: ubuntu-24.04-arm
             label: linux-aarch64
             arch: aarch64
@@ -73,7 +79,8 @@ jobs:
           [ "$(uname -m)" = "${{ matrix.arch }}" ] || { echo "runner $(uname -m) tidak cocok dengan label ${{ matrix.label }}"; exit 1; }
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro src/*.cpp
           file tugas_alpro | grep -q 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
-          printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
+          out=$(printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro)
+          echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           tar -czf "alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.tar.gz" -C paket .
 
@@ -94,11 +101,32 @@ jobs:
             alpro-console-tools-*.tar.gz
           if-no-files-found: error
 
+  # Dry-run (workflow_dispatch): job tanpa izin tulis ini mengumpulkan keempat paket dan mencetak daftar SHA-256,
+  # dikarenakan download-artifact dan penamaan paket hanya terbukti dengan dijalankan, sedangkan rilis tidak boleh dibuat.
+  kumpulkan:
+    name: Dry-run (kumpulkan paket, tanpa rilis)
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Ambil semua paket
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: paket
+          merge-multiple: true
+
+      - name: Buat daftar SHA-256 semua paket (tidak diunggah)
+        run: |
+          cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
+          [ "$(ls | wc -l)" -eq 5 ] || { echo "jumlah berkas bukan 5 (4 paket + SHA256SUMS)"; exit 1; }
+
   # Tahap 2: satu job mengumpulkan keempat paket dan membuat halaman Release sekali, dengan catatan rilis otomatis.
+  # Hanya berjalan untuk push tag, dikarenakan dry-run tidak boleh membuat rilis.
   publish:
     name: Terbitkan Release
+    if: startsWith(github.ref, 'refs/tags/')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write  # satu-satunya job yang menulis: membuat rilis dan mengunggah aset
     steps:

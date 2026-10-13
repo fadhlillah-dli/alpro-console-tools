@@ -21,8 +21,8 @@ main() {
     Darwin) label="macos-universal"; ext="zip" ;;
     Linux)
       # Nama arsitektur dari uname -m dipetakan ke label paket, dikarenakan rilis Linux ada dua: x86_64 (PC/laptop/server
-      # Intel dan AMD) dan aarch64 (ARM64: Raspberry Pi 4/5 64-bit, server ARM, VM Apple Silicon); arm64 adalah nama lain
-      # yang dipakai sebagian distro untuk aarch64.
+      # Intel dan AMD) dan aarch64 (ARM64: Raspberry Pi 4/5 dengan kernel 64-bit, server ARM, VM Apple Silicon).
+      # Cabang arm64 hanya berjaga-jaga: di Linux uname -m memberi aarch64, tetapi Debian (dpkg) dan macOS menyebutnya arm64.
       arch="$(uname -m)"
       case "$arch" in
         x86_64)        label="linux-x86_64" ;;
@@ -48,9 +48,11 @@ main() {
   trap 'if [ -n "$tmp" ]; then rm -rf "$tmp"; fi' EXIT INT TERM HUP
   tmp="$(mktemp -d)"
   say "Mengunduh $asset ..."
-  # Pesan khusus bila paket tidak ada berfungsi untuk menjelaskan penyebabnya, dikarenakan rilis sebelum v1.0.6 belum
-  # menyertakan paket linux-aarch64 dan curl -f hanya melaporkan kode HTTP.
-  curl -fsSL -o "$tmp/$asset" "$base/$asset" || die "paket $asset tidak ditemukan di rilis $version (paket linux-aarch64 ada sejak v1.0.6)"
+  # Pesan gagal unduh menyebut nama aset dan versinya; petunjuk tambahan hanya untuk aarch64 berfungsi menjelaskan penyebab
+  # yang paling mungkin, dikarenakan rilis sebelum v1.0.6 belum menyertakan paket linux-aarch64 (curl -f hanya memberi kode).
+  hint=""
+  [ "$label" = "linux-aarch64" ] && hint=" (paket linux-aarch64 baru ada sejak v1.0.6)"
+  curl -fsSL -o "$tmp/$asset" "$base/$asset" || die "gagal mengunduh $asset dari rilis $version$hint"
 
   # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.2 menyertakannya.
   curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
