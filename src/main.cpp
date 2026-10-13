@@ -144,7 +144,10 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
             || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) adalah suku kata Hangul; 0xF900-0xFAFF adalah aksara CJK kompatibilitas.
             || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) || (codePoint >= 0xFF00 && codePoint <= 0xFF60) // || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) adalah bentuk kompatibilitas CJK; 0xFF00-0xFF60 adalah huruf lebar penuh.
             || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) || (codePoint >= 0x1F300 && codePoint <= 0x1F64F) // || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) adalah tanda lebar penuh (misalnya ¥); 0x1F300-0x1F64F adalah emoji.
-            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); // || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); adalah emoji tambahan. Hasilnya true bila code point masuk salah satu rentang di atas.
+            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) || (codePoint >= 0x1F680 && codePoint <= 0x1F6FF) // || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) adalah emoji tambahan;
+            // 0x1F680-0x1F6FF adalah emoji kendaraan dan peta.
+            || (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) || (codePoint >= 0x20000 && codePoint <= 0x3FFFD); // || (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) adalah emoji simbol baru;
+            // 0x20000-0x3FFFD adalah aksara CJK tambahan yang jarang dipakai. Hasilnya true bila code point masuk salah satu rentang di atas.
     } // akhir fungsi isWideCodePoint()
 
     // std::size_t adalah tipe bilangan bulat tanpa tanda negatif yang dipakai C++ untuk ukuran dan panjang (berasal dari <cstddef>).
@@ -183,7 +186,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
 
     int terminalWidth() { // terminalWidth() berfungsi untuk menanyakan lebar jendela terminal (dalam kolom) setiap kali dipanggil, jadi tampilan ikut menyesuaikan bila jendela diubah ukurannya.
     // Bila terminal tidak bisa ditanya (keluaran bukan terminal), dicoba variabel lingkungan COLUMNS; bila itu juga tidak ada, dipakai 80 kolom, ukuran bawaan terminal pada umumnya.
-    // Hasilnya int dan tidak pernah di bawah 40, karena di bawah 40 kolom kotak menu dan baris hasil tidak muat lagi; 40 cukup untuk Termux tegak di ponsel (sekitar 46 kolom).
+    // Hasilnya int dan tidak pernah di bawah 40: tata letak program (kotak, menu, sketsa, tabel) dirancang dan diuji mulai 40 kolom, dan 40 sudah cukup untuk Termux di ponsel tegak (sekitar 46 kolom); di terminal yang lebih sempit, terminal sendiri yang melipat baris.
         int cols = 0;  // cols = 0 artinya lebar belum diketahui.
     #ifdef _WIN32 // _WIN32: cara bertanya ke terminal berbeda di Windows dan macOS/Linux, jadi dipilih lagi; bagian sampai #else hanya untuk Windows.
         // CONSOLE_SCREEN_BUFFER_INFO adalah struct milik Windows. Struct adalah wadah berisi beberapa data bernama, dan tanda titik (.) berfungsi untuk mengambil salah satu datanya.
@@ -209,7 +212,8 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) { // wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent)
     // berfungsi untuk memotong text di spasi menjadi beberapa baris yang masing-masing muat dalam maxWidth kolom, supaya terminal tidak memotongnya sembarangan.
     // Baris lanjutan diberi indentasi gantung sebanyak hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox() dan printError() di bawah.
-    // Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong tepat di batas lebar.
+    // Lebar dihitung per karakter dengan displayWidth() (aksara lebar seperti CJK memakai 2 kolom). Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong di batas lebar.
+    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya.
         std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
         std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
@@ -218,7 +222,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
             std::size_t col = 0, cutPos = std::string::npos; // col menghitung kolom layar, dan cutPos menyimpan posisi spasi tempat memotong; std::string::npos adalah nilai khusus yang berarti "tidak ditemukan" (belum ada spasi).
             std::size_t looseCutPos = std::string::npos, hardCutPos = std::string::npos; // looseCutPos dan hardCutPos adalah dua titik potong cadangan, mula-mula std::string::npos (belum ada):
             // looseCutPos = spasi terakhir setelah teks dimulai, hardCutPos = posisi byte tempat batas lebar tercapai. Keduanya dipakai setelah perulangan for di bawah.
-            bool seenText = false; // seenText = false: nilainya menjadi true begitu bertemu karakter pertama yang bukan spasi, supaya spasi indentasi di depan baris tidak dipakai sebagai titik potong.
+            bool seenText = false; // seenText = false artinya belum bertemu teks; nilainya menjadi true begitu bertemu karakter pertama yang bukan spasi, supaya spasi indentasi di depan baris tidak dipakai sebagai titik potong.
             bool inEscape = false;  // inEscape = false: nilainya true selama berada di dalam kode warna, yang tidak memakai kolom.
             // for (awal; syarat; langkah) adalah perulangan for biasa: mulai dari awal, berulang selama syarat benar, dan menjalankan langkah setiap selesai satu putaran.
             for (std::size_t i = 0; i < remaining.size(); ++i) { // for (std::size_t i = 0; i < remaining.size(); ++i) artinya periksa setiap byte remaining dari posisi 0 sampai terakhir untuk mencari
@@ -229,27 +233,48 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                 if (inEscape) { if (c == 'm') inEscape = false; continue; }  // if (inEscape) artinya lewati isi kode warna sampai huruf 'm'.
                 if (c == 0x1B) { inEscape = true; continue; }  // c == 0x1B artinya ESC, awal kode warna.
                 if ((c & 0xC0) == 0x80) continue;  // (c & 0xC0) == 0x80 artinya byte lanjutan UTF-8; ia bukan karakter baru, jadi tidak menambah kolom.
+                std::size_t charEnd = i + 1; // charEnd adalah posisi byte sesudah karakter ini; mula-mula i + 1, karena satu karakter paling sedikit satu byte.
+                while (charEnd < remaining.size() && (static_cast<unsigned char>(remaining[charEnd]) & 0xC0) == 0x80) ++charEnd; // (... & 0xC0) == 0x80 artinya byte berikutnya
+                // adalah byte lanjutan UTF-8 milik karakter yang sama, jadi ++charEnd melewatinya.
+                const std::size_t charWidth = displayWidth(remaining.substr(i, charEnd - i)); // charWidth adalah lebar karakter ini di layar menurut displayWidth():
+                // 2 kolom untuk aksara lebar (CJK, Hangul, emoji), 1 kolom untuk yang lain.
                 // break berfungsi untuk keluar dari perulangan saat itu juga.
-                if (col >= maxWidth) { hardCutPos = i; break; } // col >= maxWidth artinya batas lebar tercapai: hardCutPos = i mencatat posisi byte ini untuk potongan paksa, lalu break berhenti mencari.
+                if (col + charWidth > maxWidth) { hardCutPos = i; break; } // col + charWidth > maxWidth artinya karakter ini tidak muat lagi di baris: hardCutPos = i mencatat posisinya untuk potongan paksa, lalu break berhenti mencari.
                 if (c == ' ' && col > hangingIndent) cutPos = i; // c == ' ' && col > hangingIndent artinya spasi ini menjadi calon titik potong, asalkan letaknya setelah indentasi gantung;
                 // yang akhirnya tersimpan adalah spasi terakhir sebelum batas lebar.
                 if (c == ' ' && seenText) looseCutPos = i; // c == ' ' && seenText artinya spasi ini ada setelah teks dimulai, jadi dicatat sebagai titik potong cadangan looseCutPos.
                 if (c != ' ') seenText = true; // c != ' ' artinya karakter ini bukan spasi, jadi seenText = true: teks di baris ini sudah dimulai.
-                ++col;  // ++col; artinya karakter ini memakai satu kolom.
+                col += charWidth; // col += charWidth artinya kolom bertambah selebar karakter ini (1 atau 2).
             } // akhir perulangan mencari titik potong
             // Bila tidak ada spasi setelah indentasi gantung (misalnya angka hasil yang sangat panjang setelah label), dipakai spasi cadangan.
-            if (cutPos == std::string::npos && looseCutPos != std::string::npos) { cutPos = looseCutPos; hangingIndent = 2; } // cutPos == std::string::npos && looseCutPos != std::string::npos
-            // artinya hanya ada spasi cadangan: cutPos = looseCutPos memotong di sana, dan hangingIndent = 2 membuat lanjutannya cukup menjorok 2 spasi supaya isinya muat.
-            if (cutPos != std::string::npos) { // cutPos != std::string::npos artinya ada spasi untuk memotong: spasinya dibuang dan sisa teks pindah ke baris berikutnya.
-                result.push_back(remaining.substr(0, cutPos)); // remaining.substr(0, cutPos) mengambil teks dari awal sampai sebelum spasi, lalu push_back menambahkannya ke ujung result.
-                remaining = std::string(hangingIndent, ' ') + remaining.substr(cutPos + 1); // std::string(hangingIndent, ' ') adalah hangingIndent buah spasi, disambung dengan sisa teks mulai setelah spasi (cutPos + 1).
-            } else if (hardCutPos != std::string::npos && maxWidth > hangingIndent) { // hardCutPos != std::string::npos && maxWidth > hangingIndent artinya tidak ada spasi sama sekali, jadi satu kata
-            // lebih panjang dari satu baris; kata itu dipotong tepat di batas lebar. Syarat maxWidth > hangingIndent menjamin setiap putaran memotong sedikitnya satu huruf, jadi perulangan pasti selesai.
-                result.push_back(remaining.substr(0, hardCutPos)); // remaining.substr(0, hardCutPos) mengambil teks dari awal sampai batas lebar, lalu push_back menambahkannya ke ujung result.
-                remaining = std::string(hangingIndent, ' ') + remaining.substr(hardCutPos); // remaining.substr(hardCutPos) adalah sisa kata mulai tepat di batas lebar; tidak ada huruf yang dibuang.
+            if (cutPos == std::string::npos && looseCutPos != std::string::npos) { cutPos = looseCutPos; hangingIndent = 2; } // cutPos == std::string::npos && looseCutPos != std::string::npos artinya
+            // hanya ada spasi cadangan: cutPos = looseCutPos memotong di sana, dan hangingIndent = 2 membuat lanjutannya cukup menjorok 2 spasi supaya isinya muat.
+            std::size_t pieceEnd = 0, restStart = 0; // pieceEnd adalah posisi byte akhir potongan baris ini, dan restStart adalah posisi byte awal sisa teks untuk baris berikutnya.
+            if (cutPos != std::string::npos) { // cutPos != std::string::npos artinya ada spasi untuk memotong.
+                pieceEnd = cutPos; // pieceEnd = cutPos artinya potongan berakhir tepat sebelum spasi itu.
+                restStart = remaining.find_first_not_of(' ', cutPos); // remaining.find_first_not_of(' ', cutPos) adalah posisi huruf pertama setelah spasi itu,
+                // jadi spasi di titik potong (juga spasi ganda) dibuang dan baris berikutnya tidak menjorok terlalu jauh.
+                if (restStart == std::string::npos) restStart = remaining.size(); // restStart == std::string::npos artinya setelah spasi itu tidak ada huruf lagi, jadi sisanya kosong.
+            } else if (hardCutPos != std::string::npos && col > hangingIndent) { // hardCutPos != std::string::npos && col > hangingIndent artinya tidak ada spasi sama sekali,
+            // jadi satu kata lebih panjang dari satu baris dan kata itu dipotong di batas lebar. Syarat col > hangingIndent artinya potongan memuat huruf selain spasi indentasi,
+            // sehingga sisa teks selalu memendek dan perulangan pasti selesai.
+                pieceEnd = hardCutPos; // pieceEnd = hardCutPos artinya potongan berakhir tepat sebelum karakter yang tidak muat.
+                restStart = hardCutPos; // restStart = hardCutPos artinya sisa teks dimulai dari karakter itu; tidak ada huruf yang dibuang.
             } else { // else artinya tidak ada titik potong yang aman sama sekali.
-                break; // break; keluar dari while dan membiarkan sisa teks apa adanya.
+                break; // break artinya keluar dari while dan membiarkan sisa teks apa adanya.
             } // akhir pemilihan titik potong
+            std::string piece = remaining.substr(0, pieceEnd); // piece adalah teks baris ini: remaining.substr(0, pieceEnd) mengambil byte dari awal sampai sebelum pieceEnd.
+            // Kode warna yang masih menyala di ujung piece dimatikan dulu dengan ANSI_RESET, lalu dinyalakan lagi di awal baris berikutnya,
+            // supaya warnanya tidak bocor ke garis tepi kotak dan baris lanjutan tetap berwarna sama.
+            std::string activeColor; // activeColor adalah kode warna yang masih menyala di ujung piece; mula-mula kosong.
+            const std::size_t lastEscape = piece.rfind('\033'); // piece.rfind('\033') adalah posisi kode warna terakhir di piece (dicari dari belakang), atau std::string::npos bila tidak ada.
+            if (lastEscape != std::string::npos) activeColor = piece.substr(lastEscape, piece.find('m', lastEscape) - lastEscape + 1); // piece.substr(lastEscape, ...) adalah kode warna itu,
+            // mulai dari ESC ('\033') sampai huruf 'm' penutupnya.
+            if (activeColor == ANSI_RESET) activeColor.clear(); // activeColor == ANSI_RESET artinya kode terakhir justru mematikan warna; activeColor.clear() berfungsi untuk mengosongkannya.
+            if (!activeColor.empty()) piece += ANSI_RESET; // !activeColor.empty() artinya masih ada warna yang menyala, jadi piece += ANSI_RESET mematikannya di ujung baris.
+            result.push_back(piece); // result.push_back(piece) artinya potongan ini menjadi satu baris hasil.
+            remaining = std::string(hangingIndent, ' ') + activeColor + remaining.substr(restStart); // std::string(hangingIndent, ' ') + activeColor + remaining.substr(restStart) adalah
+            // baris berikutnya: spasi indentasi gantung, kode warna yang dinyalakan lagi (bila ada), lalu sisa teks.
         } // akhir perulangan while
         result.push_back(remaining);  // result.push_back(remaining); artinya sisa terakhir sudah muat, jadi ia menjadi baris terakhir.
         return result; // return result; mengembalikan daftar baris hasil.
@@ -262,7 +287,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
         const std::size_t maxWidth = static_cast<std::size_t>(terminalWidth() - 5); // terminalWidth() - 5 adalah lebar isi terbesar: lebar terminal dikurangi 2 tepi kotak, 2 margin, dan 1 kolom cadangan;
         // kolom cadangan perlu karena sebagian terminal menambah baris kosong bila sebuah baris persis selebar jendela. static_cast<std::size_t> mengubah hasil int menjadi std::size_t.
         // Judul yang lebih lebar dari garis atas (bisa terjadi di terminal sempit) dilipat per kata: potongan pertama di garis atas, sisanya di baris isi pertama.
-        const std::vector<std::string> titleLines = wrapText(std::string(title), maxWidth - 2, 0); // wrapText(std::string(title), maxWidth - 2, 0) melipat judul tanpa indentasi gantung;
+        const std::vector<std::string> titleLines = wrapText(std::string(title), maxWidth - 2, 0); // wrapText(std::string(title), maxWidth - 2, 0) berfungsi untuk melipat judul tanpa indentasi gantung;
         // maxWidth - 2 karena garis atas "┌─ judul ─┐" butuh 4 kolom di luar judul, sedangkan lebar dalam kotak paling besar maxWidth + 2. Judul yang muat tetap satu potongan.
         const std::string& titleTop = titleLines[0]; // titleLines[0] adalah potongan judul pertama (titleTop), yang ditulis di garis atas kotak.
         std::vector<std::string> contentLines;  // contentLines adalah baris isi setelah dibungkus, siap digambar.

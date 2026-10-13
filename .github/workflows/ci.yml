@@ -64,6 +64,60 @@ jobs:
           echo "$out" | grep -q "Nilai Rata-Rata        70.00" || { echo "rata-rata salah"; exit 1; }
           echo "Uji asap lulus"
 
+      # Tata letak terminal sempit: setiap baris buatan program harus muat di terminal (lebar - 1 kolom) untuk 40-200 kolom,
+      # juga dengan nama beraksara lebar (CJK, Hangul, huruf lebar penuh, emoji), nama 60 karakter, angka terbesar, dan input
+      # yang habis di tengah jalan. Lebar dibaca program dari COLUMNS karena keluarannya pipa (sama persis dengan terminal
+      # sungguhan). Lewat pipa ketikan tidak di-echo, jadi setiap prompt di awal baris dipisah ke barisnya sendiri; prompt yang
+      # tidak dikenali hanya membuat baris lebih panjang, sehingga gate ini bisa gagal palsu tetapi tidak pernah lolos palsu.
+      # Setiap kasus juga harus memuat teks hasilnya, supaya masukan yang tertolak tidak membuat kasus kosong yang lolos.
+      - name: Uji tata letak terminal sempit (40-200 kolom)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import os, re, subprocess, sys, unicodedata
+          def width(s):
+              return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in s)
+          PROMPT = re.compile(r'^(Pilihan Anda {12}: |Pilihan Anda \[0-3\] : |Tekan Enter untuk kembali ke menu\.\.\.|Nama Mata Kuliah : '
+                              r'|Jumlah Mahasiswa : |  Nama Lengkap  : |  Nilai \(0-100\) : |Masukkan [^:]*\) : )')
+          def lines_of(text):
+              for line in text.split('\n'):
+                  m = PROMPT.match(line)
+                  while m and len(line) > m.end():
+                      yield line[:m.end()]
+                      line = line[m.end():]
+                      m = PROMPT.match(line)
+                  yield line
+          K = lambda *xs: '\n'.join(xs) + '\n'
+          CASES = [
+              ('tugas_alpro', K('2', '', '2', '2', '14', '10', '', '3', '', '2', '14', '', '0'), 'Luas Bangun yang Diarsir'),
+              ('tugas_alpro', K('1', 'Algoritma dan Pemrograman Lanjutan Semester Ganjil', '2',
+                                'Muhammad Fadhlillah Abdurrahman Al Ghifari Putra Pratama', '99.5', 'Siti', '100', '', '0'), 'Nilai Rata-Rata'),
+              ('tugas_alpro', K('1', '王' * 30, '2', '王小明 李四 张三丰 王五 赵六 孙七 周八 吴九', '90', '한' * 30, '80', '', '0'), 'Nilai Rata-Rata'),
+              ('tugas_alpro', K('1', 'Ａ' * 30, '2', 'Ａ' * 30, '70', '🚀' * 30, '60', '', '0'), 'Nilai Rata-Rata'),
+              ('tugas_alpro', K('1', 'K' * 60, '1', 'N' * 60, '55', '', '0'), 'Nilai Rata-Rata'),
+              ('tugas_alpro', K('2', '4', '1', '1', '1000000', '1000000', '', '3', '4', '1', '1000000', '', '0'), 'Luas Bangun yang Diarsir'),
+              ('tugas_alpro', K('9', 'abc', '2', 'x', '9', '', '-5', 'abc', '14', '10', '', '0'), '[!]'),
+              ('tugas1_nilai_mahasiswa', K('Pemrograman', '1', '王' * 30, '100'), 'Nilai Rata-Rata'),
+              ('tugas2_volume_tabung', K('', '2', '2', '14', '10'), 'Volume Tabung'),
+              ('tugas3_luas_arsir', K('', '2'), 'Input berakhir'),
+          ]
+          bad = []
+          for cols in range(40, 201):
+              for exe, stdin, must in CASES:
+                  r = subprocess.run(['./' + exe], input=stdin.encode(), capture_output=True, env=dict(os.environ, COLUMNS=str(cols)), timeout=30)
+                  out, err = r.stdout.decode('utf-8'), r.stderr.decode('utf-8')
+                  if must not in out + err:
+                      bad.append(f'{exe} @{cols}: keluaran tidak memuat "{must}" (kasus tidak teruji)')
+                  for line in list(lines_of(out)) + err.split('\n'):
+                      if width(line) > cols - 1:
+                          bad.append(f'{exe} @{cols}: lebar {width(line)} > {cols - 1}: {line}')
+          for b in bad[:30]:
+              print(b)
+          print(f'{len(bad)} pelanggaran dari {161 * len(CASES)} run')
+          sys.exit(1 if bad else 0)
+          PY
+
       # Menguji coba.sh persis seperti pengguna (tanpa tty, jadi masukan lewat stdin) dan memastikan folder sementaranya
       # benar-benar dihapus, dikarenakan janji skrip itu adalah tidak menyisakan berkas apa pun.
       # Di runner ARM, selama rilis terbaru belum memuat paket linux-aarch64, coba.sh harus menolak dengan pesan yang

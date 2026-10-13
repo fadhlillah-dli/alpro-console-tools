@@ -136,7 +136,7 @@ alpro-console-tools/
 │   ├── tugas1_nilai_mahasiswa.cpp   Program 1 — lengkap, bisa dikompilasi sendiri
 │   ├── tugas2_volume_tabung.cpp     Program 2 — lengkap, bisa dikompilasi sendiri
 │   └── tugas3_luas_arsir.cpp        Program 3 — lengkap, bisa dikompilasi sendiri
-├── .github/workflows/               CI (build 3 OS pada 4 runner termasuk Linux ARM64, uji asap, uji coba.sh/coba.ps1) dan Release (paket biner saat tag v*)
+├── .github/workflows/               CI (build 3 OS pada 4 runner termasuk Linux ARM64, uji asap, uji tata letak 40-200 kolom, uji coba.sh/coba.ps1) dan Release (paket biner saat tag v*)
 ├── .github/dependabot.yml           pembaruan mingguan pin commit SHA action di workflow
 ├── .vscode/                         task build & run, pengaturan IntelliSense C++17
 ├── .githooks/commit-msg             hook: pesan commit bebas atribusi alat AI

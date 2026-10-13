@@ -4,19 +4,32 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ## [Unreleased]
 
+### Ditambahkan
+- Gate CI "Uji tata letak terminal sempit" (Linux dan macOS): ketiga program dijalankan di 40-200 kolom dengan nama ASCII
+  dan beraksara lebar sepanjang batasnya, ukuran terbesar, input salah, dan input yang habis di tengah jalan; setiap baris
+  buatan program harus paling lebar terminal dikurangi 1 kolom. Gate ini gagal pada v1.0.7 dan pada perbaikan pertama
+  yang belum menghitung aksara lebar.
+
 ### Diperbaiki
 - Tampilan di terminal sempit, misalnya Termux pada ponsel tegak (sekitar 46 kolom): lebar minimal kini 40 kolom
-  (sebelumnya 50), dan tidak ada lagi baris buatan program yang melebihi lebar terminal. Garis judul mengikuti lebar
-  terminal; judul program, judul kotak banner, baris rumus, sub-judul "Input Nilai", dan baris identitas program mandiri
-  dilipat per kata; kanvas sketsa menyisakan ruang untuk panah "S" (program 3) dan catatan "T" (program 2).
+  (sebelumnya 50). Garis judul mengikuti lebar terminal; judul program, judul kotak banner, baris rumus, sub-judul
+  "Input Nilai", baris identitas program mandiri, dan pesan "Input berakhir" dilipat per kata; kanvas sketsa menyisakan
+  ruang untuk panah "S" (program 3) dan catatan "T" (program 2); di bawah 42 kolom opsi satuan ditulis satu per baris.
 - Tabel rekap program 1 tidak lagi pecah bila nama mahasiswa lebih panjang dari ruang yang tersedia (untuk nama terpanjang,
   60 karakter, terjadi di bawah 80 kolom): kolom nama dibatasi lebar kotak dan nama panjang dilipat di dalam kolomnya.
-- Pembungkus baris: angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari
-  satu baris dipotong di batas lebar, dan lanjutan baris yang sudah menjorok (contoh di kotak petunjuk, keterangan menu)
-  kini lurus di bawah barisnya, juga di terminal sampai 100 kolom.
-- Diuji di pseudo-terminal 40-200 kolom untuk ketiga program (menu dan mandiri, termasuk nama dan angka panjang): tidak ada
-  baris yang melebihi lebar terminal, uji asap tetap persis, dan di terminal 101 kolom ke atas tampilan sama dengan v1.0.7.
-  Paket android v1.0.7 sudah dicoba pemilik di perangkat Termux dan berjalan; masalah yang terlihat hanya tata letak di atas.
+- Pembungkus baris menghitung lebar per karakter, jadi aksara lebar (CJK, Hangul, huruf lebar penuh, emoji) dihitung dua
+  kolom. Angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari satu baris
+  dipotong di batas lebar, warna baris hasil ikut ke baris lanjutannya tanpa bocor ke garis tepi kotak, spasi ganda di
+  titik potong dibuang, dan lanjutan baris yang sudah menjorok (contoh di kotak petunjuk, keterangan menu) lurus di bawah
+  barisnya, juga di terminal sampai 100 kolom.
+- Emoji kendaraan dan peta (U+1F680-1F6FF, misalnya roket), emoji simbol baru (U+1FA70-1FAFF), dan aksara CJK tambahan
+  (U+20000 ke atas) kini dihitung dua kolom, sehingga kolom nilai di tabel rekap tetap sejajar untuk nama yang memuatnya,
+  juga di terminal lebar.
+- Selain gate CI, diuji di pseudo-terminal 40-200 kolom untuk program bermenu dan program mandiri: tidak ada baris buatan
+  program yang melebihi lebar terminal untuk masukan yang diuji, dan uji asap tetap persis. Di terminal 101 kolom ke atas
+  tampilan sama dengan v1.0.7, kecuali tabel untuk nama yang memuat emoji atau aksara dari rentang yang baru ditambahkan.
+  Simbol yang lebarnya berbeda antarterminal (misalnya sebagian simbol U+2600-27BF) tetap dihitung satu kolom.
+- Paket android v1.0.7 sudah dicoba pemilik di perangkat Termux dan berjalan; yang perlu diperbaiki hanya tata letak di atas.
 
 ## [1.0.7] - 2026-10-13
 
