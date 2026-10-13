@@ -43,7 +43,7 @@ main() {
   say "Mengunduh $asset ..."
   curl -fsSL -o "$tmp/$asset" "$base/$asset"
 
-  # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.1 menyertakannya.
+  # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.2 menyertakannya.
   curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
   expected="$(grep " $asset\$" "$tmp/SHA256SUMS" | cut -d' ' -f1)"
   if command -v sha256sum >/dev/null 2>&1; then actual="$(sha256sum "$tmp/$asset" | cut -d' ' -f1)"

@@ -1,6 +1,7 @@
 # Dependabot berfungsi untuk memperbarui pin commit SHA action di workflow (beserta komentar versinya) lewat pull request
 # mingguan, dikarenakan action yang dipin ke SHA tidak lagi tercakup peringatan kerentanan otomatis GitHub; semua
-# pembaruan digabung menjadi satu PR agar mudah ditinjau. CI berjalan pada PR itu sebelum di-merge.
+# pembaruan digabung menjadi satu PR agar mudah ditinjau. CI berjalan pada PR itu, tetapi PR tidak di-merge: pemilik
+# menerapkan diff-nya sebagai commit sendiri, dikarenakan main hanya boleh berisi commit pemilik.
 version: 2
 updates:
   - package-ecosystem: github-actions

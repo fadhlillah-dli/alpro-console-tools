@@ -66,7 +66,7 @@
         $zip = Join-Path $tmp $asset
         Invoke-WebRequest -Uri "$base/$asset" -OutFile $zip -Headers $agent -UseBasicParsing
 
-        # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.1 menyertakannya.
+        # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.2 menyertakannya.
         $sums = Join-Path $tmp 'SHA256SUMS'
         Invoke-WebRequest -Uri "$base/SHA256SUMS" -OutFile $sums -Headers $agent -UseBasicParsing
         $expected = Get-Content -LiteralPath $sums | Where-Object { $_ -match ('\s' + [regex]::Escape($asset) + '\s*$') } |

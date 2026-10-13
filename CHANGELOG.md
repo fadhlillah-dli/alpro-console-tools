@@ -2,6 +2,18 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Diubah
+- Komentar sumber mengikuti pola pemilik: kata kunci dijelaskan di atas kemunculan pertamanya, tiap baris kode diberi
+  komentar ujung; konvensi di README dan CONTRIBUTING diperbarui.
+- Komentar `coba.sh`, `coba.ps1`, dan `.github/dependabot.yml` diluruskan: `SHA256SUMS` ada sejak v1.0.2, dan PR Dependabot
+  tidak di-merge melainkan diterapkan sebagai commit pemilik.
+
+### Keamanan
+- Pin action diperbarui dari PR #1 Dependabot: checkout v7.0.1, upload-artifact v7.0.2, download-artifact v8.0.2; jalur
+  rilis dengan dua action terakhir baru teruji pada tag berikutnya.
+
 ## [1.0.5] - 2026-10-12
 
 ### Ditambahkan
