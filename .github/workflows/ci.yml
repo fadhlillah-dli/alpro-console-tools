@@ -65,21 +65,26 @@ jobs:
           echo "Uji asap lulus"
 
       # Tata letak terminal sempit: setiap baris buatan program harus muat di terminal (lebar - 1 kolom) untuk 40-200 kolom,
-      # juga dengan nama beraksara lebar (CJK, Hangul, huruf lebar penuh, emoji), nama 60 karakter, angka terbesar, dan input
-      # yang habis di tengah jalan. Lebar dibaca program dari COLUMNS karena keluarannya pipa (sama persis dengan terminal
-      # sungguhan). Lewat pipa ketikan tidak di-echo, jadi setiap prompt di awal baris dipisah ke barisnya sendiri; prompt yang
-      # tidak dikenali hanya membuat baris lebih panjang, sehingga gate ini bisa gagal palsu tetapi tidak pernah lolos palsu.
-      # Setiap kasus juga harus memuat teks hasilnya, supaya masukan yang tertolak tidak membuat kasus kosong yang lolos.
+      # dengan nama beraksara lebar yang dikenali program (CJK, Hangul, huruf lebar penuh, emoji wajah), nama 60 karakter,
+      # ukuran terbesar, setiap jenis input salah (skrip validasi PRD 4.2 dan urutan menu 2), dan input yang habis.
+      # Setiap kasus dijalankan tanpa warna dan dengan FORCE_COLOR=1, karena baris berwarna bisa dilipat berbeda; kode warna
+      # dikupas sebelum diukur. Lebar dibaca program dari COLUMNS karena keluarannya pipa. Lewat pipa ketikan tidak di-echo,
+      # jadi prompt di awal baris dipisah ke barisnya sendiri; pemisahan ini tidak bisa menyembunyikan baris yang melebar,
+      # karena prompt yang tidak dikenali hanya membuat baris lebih panjang. Setiap kasus wajib memuat teks hasilnya dan
+      # jumlah pesan [!] yang persis, supaya kasus yang ketikannya tergeser tidak lolos diam-diam. Cakupannya hanya kasus
+      # di daftar ini; stdout dan stderr diukur terpisah. Tanda aksen gabungan juga tidak boleh terpisah dari hurufnya saat
+      # nama dilipat. Kontrol negatif: gate ini gagal pada v1.0.7.
       - name: Uji tata letak terminal sempit (40-200 kolom)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           python3 -I - <<'PY'
           import os, re, subprocess, sys, unicodedata
+          ANSI = re.compile(r'\x1b\[[0-9;]*m')
           def width(s):
               return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in s)
           PROMPT = re.compile(r'^(Pilihan Anda {12}: |Pilihan Anda \[0-3\] : |Tekan Enter untuk kembali ke menu\.\.\.|Nama Mata Kuliah : '
-                              r'|Jumlah Mahasiswa : |  Nama Lengkap  : |  Nilai \(0-100\) : |Masukkan [^:]*\) : )')
+                              r'|Jumlah Mahasiswa : |  Nama Lengkap  : |  Nilai \(0-100\) : |Masukkan [^:]*\) +: )')
           def lines_of(text):
               for line in text.split('\n'):
                   m = PROMPT.match(line)
@@ -89,32 +94,54 @@ jobs:
                       m = PROMPT.match(line)
                   yield line
           K = lambda *xs: '\n'.join(xs) + '\n'
+          # (program, ketikan, teks yang wajib muncul, jumlah pesan [!] yang wajib persis)
           CASES = [
-              ('tugas_alpro', K('2', '', '2', '2', '14', '10', '', '3', '', '2', '14', '', '0'), 'Luas Bangun yang Diarsir'),
+              ('tugas_alpro', K('2', '', '2', '2', '14', '10', '', '3', '', '2', '14', '', '0'), ['Volume Tabung         : 1540.00', 'Luas Bangun yang Diarsir : 42.00'], 0),
               ('tugas_alpro', K('1', 'Algoritma dan Pemrograman Lanjutan Semester Ganjil', '2',
-                                'Muhammad Fadhlillah Abdurrahman Al Ghifari Putra Pratama', '99.5', 'Siti', '100', '', '0'), 'Nilai Rata-Rata'),
-              ('tugas_alpro', K('1', '王' * 30, '2', '王小明 李四 张三丰 王五 赵六 孙七 周八 吴九', '90', '한' * 30, '80', '', '0'), 'Nilai Rata-Rata'),
-              ('tugas_alpro', K('1', 'Ａ' * 30, '2', 'Ａ' * 30, '70', '🚀' * 30, '60', '', '0'), 'Nilai Rata-Rata'),
-              ('tugas_alpro', K('1', 'K' * 60, '1', 'N' * 60, '55', '', '0'), 'Nilai Rata-Rata'),
-              ('tugas_alpro', K('2', '4', '1', '1', '1000000', '1000000', '', '3', '4', '1', '1000000', '', '0'), 'Luas Bangun yang Diarsir'),
-              ('tugas_alpro', K('9', 'abc', '2', 'x', '9', '', '-5', 'abc', '14', '10', '', '0'), '[!]'),
-              ('tugas1_nilai_mahasiswa', K('Pemrograman', '1', '王' * 30, '100'), 'Nilai Rata-Rata'),
-              ('tugas2_volume_tabung', K('', '2', '2', '14', '10'), 'Volume Tabung'),
-              ('tugas3_luas_arsir', K('', '2'), 'Input berakhir'),
+                                'Muhammad Fadhlillah Abdurrahman Al Ghifari Putra Pratama', '99.5', 'Siti', '100', '', '0'), ['Nilai Rata-Rata'], 0),
+              ('tugas_alpro', K('1', '王' * 30, '2', '王小明 李四 张三丰 王五 赵六 孙七 周八 吴九', '90', '한' * 30, '80', '', '0'), ['Nilai Rata-Rata'], 0),
+              ('tugas_alpro', K('1', 'Ａ' * 30, '2', 'Ａ' * 30, '70', '😀' * 30, '60', '', '0'), ['Nilai Rata-Rata'], 0),
+              ('tugas_alpro', K('1', 'K' * 60, '1', 'N' * 60, '55', '', '0'), ['Nilai Rata-Rata'], 0),
+              ('tugas_alpro', K('2', '4', '1', '1', '1000000', '1000000', '', '3', '4', '1', '1000000', '', '0'), ['Volume Tabung', 'Luas Bangun yang Diarsir'], 0),
+              # Skrip validasi PRD 4.2: setiap jenis input salah di menu 1 dan 3 (27 penolakan), lalu hasilnya tetap keluar.
+              ('tugas_alpro', K('9', 'abc', '2.5', '', '1', '123', '', '.,-', 'X', '0', '1001', '3.0', '-1', 'tiga', '1', '123', '', 'Ayu', '1e2', '+5',
+                                '.5', '5.', '101', '-1', '80', '', '3', '0', '9', 'abc', '', '2', '0', '-7', '1e3', '', '14', '', '0'),
+               ['Nilai Rata-Rata        80.00', 'Luas Bangun yang Diarsir : 42.00'], 27),
+              # Setiap jenis input salah di menu 2 (12 penolakan, empat di antaranya pesan ukuran), lalu hasilnya tetap keluar.
+              ('tugas_alpro', K('9', 'abc', '2', 'x', '9', '', 'abc', '3', '', '0', '5', '', '-5', 'abc', '1000001', '14', '0', '10', '', '0'),
+               ['Volume Tabung         : 6154.40'], 12),
+              ('tugas1_nilai_mahasiswa', K('Pemrograman', '1', '王' * 30, '100'), ['Nilai Rata-Rata'], 0),
+              # Nama dengan tanda aksen gabungan (e + U+0301): saat dilipat, aksen tidak boleh terpisah dari hurufnya.
+              ('tugas1_nilai_mahasiswa', K('Kalkulus', '1', 'A' + 'e\u0301' * 29, '75'), ['Nilai Rata-Rata'], 0),
+              ('tugas2_volume_tabung', K('', '2', '2', '14', '10'), ['Volume Tabung         : 1540.00'], 0),
+              ('tugas3_luas_arsir', K('', '2'), ['Input berakhir'], 0),
           ]
           bad = []
-          for cols in range(40, 201):
-              for exe, stdin, must in CASES:
-                  r = subprocess.run(['./' + exe], input=stdin.encode(), capture_output=True, env=dict(os.environ, COLUMNS=str(cols)), timeout=30)
-                  out, err = r.stdout.decode('utf-8'), r.stderr.decode('utf-8')
-                  if must not in out + err:
-                      bad.append(f'{exe} @{cols}: keluaran tidak memuat "{must}" (kasus tidak teruji)')
-                  for line in list(lines_of(out)) + err.split('\n'):
-                      if width(line) > cols - 1:
-                          bad.append(f'{exe} @{cols}: lebar {width(line)} > {cols - 1}: {line}')
+          runs = 0
+          for color in (False, True):
+              env = {k: v for k, v in os.environ.items() if k not in ('NO_COLOR', 'FORCE_COLOR')}
+              if color:
+                  env['FORCE_COLOR'] = '1'
+              for cols in range(40, 201):
+                  env['COLUMNS'] = str(cols)
+                  for exe, stdin, musts, bangs in CASES:
+                      runs += 1
+                      r = subprocess.run(['./' + exe], input=stdin.encode(), capture_output=True, env=env, timeout=30)
+                      out, err = ANSI.sub('', r.stdout.decode('utf-8')), ANSI.sub('', r.stderr.decode('utf-8'))
+                      tag = f'{exe} @{cols}{" warna" if color else ""}'
+                      for must in musts:
+                          if must not in out + err:
+                              bad.append(f'{tag}: keluaran tidak memuat "{must}" (kasus tidak teruji sampai akhir)')
+                      if out.count('[!]') != bangs:
+                          bad.append(f'{tag}: {out.count("[!]")} pesan [!], harusnya {bangs}')
+                      for line in list(lines_of(out)) + err.split('\n'):
+                          if width(line) > cols - 1:
+                              bad.append(f'{tag}: lebar {width(line)} > {cols - 1}: {line}')
+                          if any(unicodedata.combining(c) and (k == 0 or line[k - 1] in ' \u2502') for k, c in enumerate(line)):
+                              bad.append(f'{tag}: tanda aksen terpisah dari hurufnya: {line}')
           for b in bad[:30]:
               print(b)
-          print(f'{len(bad)} pelanggaran dari {161 * len(CASES)} run')
+          print(f'{len(bad)} pelanggaran dari {runs} run')
           sys.exit(1 if bad else 0)
           PY
 

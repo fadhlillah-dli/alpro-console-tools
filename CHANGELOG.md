@@ -5,10 +5,12 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
-- Gate CI "Uji tata letak terminal sempit" (Linux dan macOS): ketiga program dijalankan di 40-200 kolom dengan nama ASCII
-  dan beraksara lebar sepanjang batasnya, ukuran terbesar, input salah, dan input yang habis di tengah jalan; setiap baris
-  buatan program harus paling lebar terminal dikurangi 1 kolom. Gate ini gagal pada v1.0.7 dan pada perbaikan pertama
-  yang belum menghitung aksara lebar.
+- Gate CI "Uji tata letak terminal sempit" (Linux dan macOS): ketiga program dijalankan di 40-200 kolom, tanpa warna dan
+  dengan warna, memakai nama ASCII dan beraksara lebar sepanjang batasnya, ukuran terbesar, input yang habis di tengah
+  jalan, dan setiap jenis input salah (skrip validasi PRD, 27 penolakan, dan urutan menu 2, 12 penolakan). Setiap baris
+  buatan program harus paling lebar terminal dikurangi 1 kolom, dan setiap kasus harus sampai ke hasilnya dengan jumlah
+  pesan `[!]` yang persis; tanda aksen gabungan juga tidak boleh terpisah dari hurufnya. Gate ini gagal pada v1.0.7, pada
+  perbaikan pertama yang belum menghitung aksara lebar, dan pada salinan uji yang pesan galatnya tidak dilipat.
 
 ### Diperbaiki
 - Tampilan di terminal sempit, misalnya Termux pada ponsel tegak (sekitar 46 kolom): lebar minimal kini 40 kolom
@@ -17,18 +19,20 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   ruang untuk panah "S" (program 3) dan catatan "T" (program 2); di bawah 42 kolom opsi satuan ditulis satu per baris.
 - Tabel rekap program 1 tidak lagi pecah bila nama mahasiswa lebih panjang dari ruang yang tersedia (untuk nama terpanjang,
   60 karakter, terjadi di bawah 80 kolom): kolom nama dibatasi lebar kotak dan nama panjang dilipat di dalam kolomnya.
-- Pembungkus baris menghitung lebar per karakter, jadi aksara lebar (CJK, Hangul, huruf lebar penuh, emoji) dihitung dua
-  kolom. Angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari satu baris
-  dipotong di batas lebar, warna baris hasil ikut ke baris lanjutannya tanpa bocor ke garis tepi kotak, spasi ganda di
-  titik potong dibuang, dan lanjutan baris yang sudah menjorok (contoh di kotak petunjuk, keterangan menu) lurus di bawah
-  barisnya, juga di terminal sampai 100 kolom.
-- Emoji kendaraan dan peta (U+1F680-1F6FF, misalnya roket), emoji simbol baru (U+1FA70-1FAFF), dan aksara CJK tambahan
-  (U+20000 ke atas) kini dihitung dua kolom, sehingga kolom nilai di tabel rekap tetap sejajar untuk nama yang memuatnya,
-  juga di terminal lebar.
+- Pembungkus baris menghitung lebar per karakter dengan pengukur yang sama dengan tabel, jadi aksara lebar yang dikenali
+  program (CJK, Hangul, huruf lebar penuh, emoji wajah dan simbol di U+1F300-1F64F dan U+1F900-1F9FF) dihitung dua kolom.
+  Angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari satu baris
+  dipotong di batas lebar tanpa memisahkan tanda aksen gabungan dari hurufnya, warna baris hasil ikut ke baris lanjutannya
+  tanpa bocor ke garis tepi kotak, spasi di titik potong dibuang dari kedua sisi, dan lanjutan baris yang sudah menjorok
+  (contoh di kotak petunjuk, keterangan menu) lurus di bawah barisnya, juga di terminal sampai 100 kolom.
 - Selain gate CI, diuji di pseudo-terminal 40-200 kolom untuk program bermenu dan program mandiri: tidak ada baris buatan
-  program yang melebihi lebar terminal untuk masukan yang diuji, dan uji asap tetap persis. Di terminal 101 kolom ke atas
-  tampilan sama dengan v1.0.7, kecuali tabel untuk nama yang memuat emoji atau aksara dari rentang yang baru ditambahkan.
-  Simbol yang lebarnya berbeda antarterminal (misalnya sebagian simbol U+2600-27BF) tetap dihitung satu kolom.
+  program yang melebihi lebar terminal untuk masukan yang diuji, uji asap tetap persis, validasi dan hasil hitung tidak
+  berubah, dan di terminal 101 kolom ke atas tampilan sama dengan v1.0.7.
+- Batasan yang tetap ada sejak v1.0.0: karakter lebar di luar rentang yang dikenali program (misalnya bintang U+2B50,
+  roket U+1F680, lingkaran berwarna U+1F7E2) dihitung satu kolom, jadi baris yang memuatnya bisa melebar satu kolom per
+  karakter. Memperluas rentang itu ikut mengubah batas 60 kolom pada validasi nama, sehingga tidak dilakukan di rilis ini.
+  Tanda aksen gabungan (huruf é yang diketik sebagai e lalu aksen terpisah) juga dihitung satu kolom tersendiri, sehingga
+  baris tabel yang memuatnya tampak lebih pendek; huruf beraksen biasa (é satu karakter) tidak terpengaruh.
 - Paket android v1.0.7 sudah dicoba pemilik di perangkat Termux dan berjalan; yang perlu diperbaiki hanya tata letak di atas.
 
 ## [1.0.7] - 2026-10-13

@@ -188,10 +188,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
             || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // || (codePoint >= 0xAC00 && codePoint <= 0xD7A3) adalah suku kata Hangul; 0xF900-0xFAFF adalah aksara CJK kompatibilitas.
             || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) || (codePoint >= 0xFF00 && codePoint <= 0xFF60) // || (codePoint >= 0xFE30 && codePoint <= 0xFE4F) adalah bentuk kompatibilitas CJK; 0xFF00-0xFF60 adalah huruf lebar penuh.
             || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) || (codePoint >= 0x1F300 && codePoint <= 0x1F64F) // || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) adalah tanda lebar penuh (misalnya ¥ versi lebar penuh); 0x1F300-0x1F64F adalah emoji.
-            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) || (codePoint >= 0x1F680 && codePoint <= 0x1F6FF) // || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) adalah emoji tambahan;
-            // 0x1F680-0x1F6FF adalah emoji kendaraan dan peta.
-            || (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) || (codePoint >= 0x20000 && codePoint <= 0x3FFFD); // || (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) adalah emoji simbol baru;
-            // 0x20000-0x3FFFD adalah aksara CJK tambahan yang jarang dipakai. Hasilnya true bila code point masuk salah satu rentang di atas.
+            || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); // || (codePoint >= 0x1F900 && codePoint <= 0x1F9FF); adalah emoji tambahan. Hasilnya true bila code point masuk salah satu rentang di atas.
     } // akhir fungsi isWideCodePoint()
 
     // std::size_t adalah tipe bilangan bulat tanpa tanda negatif yang dipakai C++ untuk ukuran dan panjang (berasal dari <cstddef>).
@@ -252,9 +249,9 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     // const std::string& adalah referensi tetap (const&): & membuat fungsi memakai teks aslinya tanpa menyalin, dan const membuat teks itu tidak boleh diubah.
     std::vector<std::string> wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) { // wrapText(const std::string& text, std::size_t maxWidth, std::size_t hangingIndent) berfungsi untuk memotong text di spasi menjadi beberapa baris
     // yang masing-masing muat dalam maxWidth kolom, supaya terminal tidak memotongnya sembarangan. Baris lanjutan diberi indentasi gantung sebanyak
-    // hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox(), printError(), dan printOptions() di bawah.
+    // hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox() dan printError() di bawah, readLine() di BAGIAN 4, printOptions() dan printTitle() di BAGIAN 5, run() di BAGIAN 6, dan main() di BAGIAN 7.
     // Lebar dihitung per karakter dengan displayWidth() (aksara lebar seperti CJK memakai 2 kolom). Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong di batas lebar.
-    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya.
+    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya; tanda aksen gabungan tetap menempel pada hurufnya, dan spasi di ujung potongan dibuang.
         std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
         std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
@@ -277,6 +274,14 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                 std::size_t charEnd = i + 1; // charEnd adalah posisi byte sesudah karakter ini; mula-mula i + 1, karena satu karakter paling sedikit satu byte.
                 while (charEnd < remaining.size() && (static_cast<unsigned char>(remaining[charEnd]) & 0xC0) == 0x80) ++charEnd; // (... & 0xC0) == 0x80 artinya byte berikutnya
                 // adalah byte lanjutan UTF-8 milik karakter yang sama, jadi ++charEnd melewatinya.
+                // += berfungsi untuk menambahkan nilai di kanan ke variabel di kiri: angka dijumlahkan, sedangkan teks disambung di ujungnya.
+                // Tanda aksen gabungan (U+0300 sampai U+036F; dalam UTF-8 dua byte 0xCC 0x80 sampai 0xCD 0xAF) digambar menempel pada huruf sebelumnya,
+                // jadi ia ikut menjadi bagian karakter ini supaya potongan paksa tidak memisahkan huruf dari aksennya.
+                while (charEnd + 1 < remaining.size() && (static_cast<unsigned char>(remaining[charEnd]) == 0xCC // charEnd + 1 < remaining.size() artinya masih ada dua byte untuk diperiksa;
+                       || (static_cast<unsigned char>(remaining[charEnd]) == 0xCD && static_cast<unsigned char>(remaining[charEnd + 1]) <= 0xAF))) { // == 0xCC || (== 0xCD && <= 0xAF) artinya
+                // dua byte itu adalah satu tanda aksen gabungan.
+                    charEnd += 2; // charEnd += 2 artinya lewati tanda aksen itu (dua byte), karena ia milik huruf yang sama.
+                } // akhir perulangan tanda aksen gabungan
                 const std::size_t charWidth = displayWidth(remaining.substr(i, charEnd - i)); // charWidth adalah lebar karakter ini di layar menurut displayWidth():
                 // 2 kolom untuk aksara lebar (CJK, Hangul, emoji), 1 kolom untuk yang lain.
                 // break berfungsi untuk keluar dari perulangan saat itu juga.
@@ -286,6 +291,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                 if (c == ' ' && seenText) looseCutPos = i; // c == ' ' && seenText artinya spasi ini ada setelah teks dimulai, jadi dicatat sebagai titik potong cadangan looseCutPos.
                 if (c != ' ') seenText = true; // c != ' ' artinya karakter ini bukan spasi, jadi seenText = true: teks di baris ini sudah dimulai.
                 col += charWidth; // col += charWidth artinya kolom bertambah selebar karakter ini (1 atau 2).
+                i = charEnd - 1; // i = charEnd - 1 artinya lompat ke byte terakhir karakter ini (termasuk tanda aksennya), supaya ++i di perulangan for langsung menuju karakter berikutnya.
             } // akhir perulangan mencari titik potong
             // Bila tidak ada spasi setelah indentasi gantung (misalnya angka hasil yang sangat panjang setelah label), dipakai spasi cadangan.
             if (cutPos == std::string::npos && looseCutPos != std::string::npos) { cutPos = looseCutPos; hangingIndent = 2; } // cutPos == std::string::npos && looseCutPos != std::string::npos artinya
@@ -304,9 +310,11 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
             } else { // else artinya tidak ada titik potong yang aman sama sekali.
                 break; // break artinya keluar dari while dan membiarkan sisa teks apa adanya.
             } // akhir pemilihan titik potong
+            while (pieceEnd > 0 && remaining[pieceEnd - 1] == ' ') --pieceEnd; // remaining[pieceEnd - 1] == ' ' artinya potongan berakhir dengan spasi (misalnya spasi pertama
+            // dari spasi ganda), jadi --pieceEnd membuangnya dari ujung baris.
             std::string piece = remaining.substr(0, pieceEnd); // piece adalah teks baris ini: remaining.substr(0, pieceEnd) mengambil byte dari awal sampai sebelum pieceEnd.
             // Kode warna yang masih menyala di ujung piece dimatikan dulu dengan ANSI_RESET, lalu dinyalakan lagi di awal baris berikutnya,
-            // supaya warnanya tidak bocor ke garis tepi kotak dan baris lanjutan tetap berwarna sama.
+            // supaya warnanya tidak bocor ke garis tepi kotak dan baris lanjutan tetap berwarna sama. Hanya kode warna terakhir yang dibawa, karena program ini tidak pernah menumpuk dua kode warna pada satu teks.
             std::string activeColor; // activeColor adalah kode warna yang masih menyala di ujung piece; mula-mula kosong.
             const std::size_t lastEscape = piece.rfind('\033'); // piece.rfind('\033') adalah posisi kode warna terakhir di piece (dicari dari belakang), atau std::string::npos bila tidak ada.
             if (lastEscape != std::string::npos) activeColor = piece.substr(lastEscape, piece.find('m', lastEscape) - lastEscape + 1); // piece.substr(lastEscape, ...) adalah kode warna itu,
@@ -353,7 +361,6 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
         // std::min berfungsi untuk memilih yang lebih kecil dari dua nilai (berasal dari <algorithm>).
         width = std::min(width, maxWidth + 2);  // std::min(width, maxWidth + 2) artinya lebar kotak tidak boleh lebih dari maxWidth + 2 margin.
         std::string filler; // filler adalah garis pengisi di kanan judul, mula-mula kosong.
-        // += berfungsi untuk menambahkan teks ke ujung teks yang sudah ada.
         for (std::size_t i = displayWidth(titleTop) + 3; i < width; ++i) filler += "\u2500";  // filler += "\u2500" artinya tambahkan ─ sebanyak sisa lebar setelah "─ judul ".
         // std::cout << berfungsi untuk mencetak ke layar; beberapa << berurutan mencetak bagian-bagiannya satu per satu dari kiri ke kanan.
         std::cout << colorize(ANSI_DIM, "\u250c\u2500 ") << colorize(ANSI_TITLE, titleTop) << colorize(ANSI_DIM, " " + filler + "\u2510") << '\n'; // colorize(ANSI_DIM, "\u250c\u2500 ") ... adalah garis atas ┌─ judul ───┐: garisnya abu-abu dan judulnya cyan tebal; '\n' adalah karakter pindah baris.
