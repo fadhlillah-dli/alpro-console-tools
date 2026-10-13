@@ -2,7 +2,7 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.8] - 2026-10-14
 
 ### Ditambahkan
 - Gate CI "Uji tata letak terminal sempit" (Linux dan macOS): ketiga program dijalankan di 40-200 kolom, tanpa warna dan
