@@ -90,19 +90,35 @@ jobs:
           echo "coba.sh OK, tanpa sisa"
 
       # Membangun biner static-pie persis seperti paket rilis Linux lalu menjalankannya, dikarenakan paket rilis harus jalan
-      # di distro dengan glibc lama (ketergantungan glibc hanya hilang bila tautan statis penuh) dan di Android/Termux
-      # (linker Android menolak executable yang bukan PIE: "has unexpected e_type: 2").
-      - name: Uji biner statis (seperti paket rilis Linux)
+      # di distro dengan glibc lama (ketergantungan glibc hanya hilang bila tautan statis penuh); PIE memberi ASLR.
+      - name: Uji biner static-pie (seperti paket rilis Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static-pie -o tugas_alpro_static src/*.cpp
           file tugas_alpro_static
           file tugas_alpro_static | grep -q -e 'static-pie linked' -e 'statically linked' || { echo "biner tidak statis"; exit 1; }
-          readelf -h tugas_alpro_static | grep -q 'Type:.*DYN' || { echo "biner bukan PIE (ET_EXEC)"; exit 1; }
-          readelf -l tugas_alpro_static | grep -q 'INTERP' && { echo "biner masih butuh interpreter dinamis"; exit 1; }
+          readelf -h tugas_alpro_static | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner bukan PIE"; exit 1; }
+          [ "$(readelf -lW tugas_alpro_static | grep -c INTERP)" -eq 0 ] || { echo "biner masih butuh interpreter dinamis"; exit 1; }
           printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro_static | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "luas arsir salah"; exit 1; }
           echo "Biner statis OK"
+
+      # Kompilasi silang untuk Android (bionic) dengan clang NDK bawaan runner x86_64 berfungsi membuktikan sumber bersih
+      # -Werror di clang NDK dan ELF-nya PIE dinamis dengan interpreter linker64, dikarenakan runner tidak bisa menjalankan
+      # biner Android; uji jalan paket android-aarch64 dilakukan di perangkat (Termux).
+      - name: Kompilasi Android aarch64 (NDK, pemeriksaan ELF saja)
+        if: matrix.os == 'ubuntu-24.04'
+        shell: bash
+        run: |
+          ndk="$ANDROID_NDK_LATEST_HOME"; [ -d "$ndk" ] || { echo "NDK tidak ada di runner"; exit 1; }
+          cxx="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
+          "$cxx" --version | head -1
+          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -o tugas_alpro_android src/*.cpp
+          file tugas_alpro_android
+          readelf -h tugas_alpro_android | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner Android bukan PIE"; exit 1; }
+          readelf -lW tugas_alpro_android | grep -q 'interpreter: /system/bin/linker64' || { echo "interpreter bukan linker64"; exit 1; }
+          [ "$(readelf -dW tugas_alpro_android | grep -c 'libc++_shared')" -eq 0 ] || { echo "masih butuh libc++_shared.so"; exit 1; }
+          echo "Biner Android OK (ELF)"
 
       # Dijalankan di shell MSYS2 dikarenakan biner CI tidak ditautkan statis dan membutuhkan DLL libstdc++ dari PATH MSYS2.
       - name: Uji asap (Windows)

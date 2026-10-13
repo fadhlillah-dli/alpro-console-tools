@@ -4,9 +4,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ## [Unreleased]
 
-### Diperbaiki
-- Paket Linux (x86_64 dan aarch64) kini ditautkan `-static-pie`, dikarenakan Android/Termux menolak executable statis
-  yang bukan PIE ("has unexpected e_type: 2" pada v1.0.6 di aarch64); workflow memeriksa tipe ELF DYN tanpa interpreter.
+### Ditambahkan
+- Paket Android aarch64 (Termux) dibangun dengan clang NDK untuk bionic: PIE dinamis dengan interpreter
+  `/system/bin/linker64` dan libc++ statis; `coba.sh` mendeteksi Termux (`uname -o` = Android atau `TERMUX_VERSION`) dan
+  memilih paket itu. Paket glibc (`linux-*`) tidak bisa jalan di Termux ("has unexpected e_type: 2" pada v1.0.6):
+  termux-exec memuatnya lewat linker Android dan seccomp aplikasi menjebak syscall mulai glibc.
+
+### Diubah
+- Paket Linux (x86_64 dan aarch64) ditautkan `-static-pie` (tetap statis penuh, ditambah ASLR); workflow memeriksa tipe
+  ELF DYN tanpa interpreter.
 
 ## [1.0.6] - 2026-10-13
 

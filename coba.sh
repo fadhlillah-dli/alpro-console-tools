@@ -1,5 +1,5 @@
 #!/bin/sh
-# Mencoba alpro-console-tools sekali jalan, tanpa memasang apa pun (macOS dan Linux).
+# Mencoba alpro-console-tools sekali jalan, tanpa memasang apa pun (macOS, Linux, dan Android/Termux).
 #   curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
 # Mengunduh paket rilis terbaru ke folder sementara, memverifikasi SHA-256, menjalankan program, lalu menghapus folder
 # itu begitu program ditutup (juga bila dihentikan dengan Ctrl+C). Tidak ada berkas yang tertinggal dan PATH tidak disentuh.
@@ -17,8 +17,16 @@ main() {
   command -v curl >/dev/null 2>&1 || die "curl tidak ditemukan"
 
   os="$(uname -s)"
+  # Termux (Android) dideteksi lebih dulu, dikarenakan uname -s di sana juga "Linux" padahal paket glibc tidak bisa
+  # jalan di Android: termux-exec memuat program lewat linker Android dan seccomp aplikasi menjebak syscall mulai glibc.
+  # uname -o memberi "Android" di Termux; macOS tidak punya opsi -o, maka galatnya dibuang.
+  if [ "$(uname -o 2>/dev/null)" = "Android" ] || [ -n "${TERMUX_VERSION:-}" ]; then os="Android"; fi
   case "$os" in
     Darwin) label="macos-universal"; ext="zip" ;;
+    Android)
+      arch="$(uname -m)"
+      [ "$arch" = "aarch64" ] || die "paket Android hanya tersedia untuk aarch64 (arsitektur ini: $arch). Kompilasi sendiri di Termux: pkg install clang libc++ git, lalu clang++ -std=c++17 -O2 -DBUILD_WITH_MENU -o tugas_alpro src/*.cpp"
+      label="android-aarch64"; ext="tar.gz" ;;
     Linux)
       # Nama arsitektur dari uname -m dipetakan ke label paket, dikarenakan rilis Linux ada dua: x86_64 (PC/laptop/server
       # Intel dan AMD) dan aarch64 (ARM64: Raspberry Pi 4/5 dengan kernel 64-bit, server ARM, VM Apple Silicon).
@@ -51,7 +59,10 @@ main() {
   # Pesan gagal unduh menyebut nama aset dan versinya; petunjuk tambahan hanya untuk aarch64 berfungsi menjelaskan penyebab
   # yang paling mungkin, dikarenakan rilis sebelum v1.0.6 belum menyertakan paket linux-aarch64 (curl -f hanya memberi kode).
   hint=""
-  [ "$label" = "linux-aarch64" ] && hint=" (paket linux-aarch64 baru ada sejak v1.0.6)"
+  case "$label" in
+    linux-aarch64)   hint=" (paket linux-aarch64 baru ada sejak v1.0.6)" ;;
+    android-aarch64) hint=" (paket android-aarch64 baru ada sejak v1.0.7)" ;;
+  esac
   curl -fsSL -o "$tmp/$asset" "$base/$asset" || die "gagal mengunduh $asset dari rilis $version$hint"
 
   # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.2 menyertakannya.

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   # Tahap 1: tiap OS mengompilasi dan mengunggah paketnya sebagai artifact (tidak langsung menyentuh halaman Release,
-  # dikarenakan empat job yang menulis ke satu Release bersamaan membuat catatan rilis tergandakan).
+  # dikarenakan lima job yang menulis ke satu Release bersamaan membuat catatan rilis tergandakan).
   # Setiap action dipin ke commit SHA penuh (versi ditulis di komentar) dikarenakan tag seperti v2 bisa dipindahkan
   # oleh siapa pun yang menguasai repositori action itu; Dependabot (.github/dependabot.yml) yang memperbarui pin-nya.
   build:
@@ -37,6 +37,13 @@ jobs:
           - os: ubuntu-24.04-arm
             label: linux-aarch64
             arch: aarch64
+          # Paket Android (Termux) dibangun dengan NDK bawaan runner x86_64 untuk bionic (PIE dinamis dengan interpreter
+          # /system/bin/linker64), dikarenakan paket glibc statis mana pun tidak bisa jalan di Termux: termux-exec memuat
+          # program lewat linker Android (menolak ET_EXEC, lalu gagal merelokasi static-pie glibc) dan seccomp aplikasi
+          # Android menjebak set_robust_list/rseq yang dipanggil glibc saat mulai.
+          - os: ubuntu-24.04
+            label: android-aarch64
+            arch: x86_64
           - os: windows-latest
             label: windows-x86_64
     steps:
@@ -76,11 +83,10 @@ jobs:
           cd paket && zip -r "../alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.zip" .
 
       # Menggunakan -static-pie (tautan statis penuh termasuk glibc, sekaligus position-independent) berfungsi agar paket
-      # jalan di distro dengan glibc lebih lama dari runner (Ubuntu 22.04, Debian 12, WSL bawaan) DAN di Android/Termux,
-      # dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38, sedangkan linker Android menolak executable yang
-      # bukan PIE dengan pesan "has unexpected e_type: 2" (kejadian v1.0.6 di Termux aarch64).
-      - name: Kompilasi Linux (static-pie agar jalan di banyak distro dan Android; x86_64 dan aarch64)
-        if: runner.os == 'Linux'
+      # jalan di distro dengan glibc lebih lama dari runner (Ubuntu 22.04, Debian 12, Alpine, WSL) dan mendapat ASLR,
+      # dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38. Paket ini bukan untuk Android: lihat paket android-aarch64.
+      - name: Kompilasi Linux (static-pie agar jalan di banyak distro; x86_64 dan aarch64)
+        if: runner.os == 'Linux' && matrix.label != 'android-aarch64'
         shell: bash
         run: |
           # Mencocokkan uname -m dengan matrix.arch berfungsi agar label paket tidak pernah salah pasang, dikarenakan
@@ -89,11 +95,32 @@ jobs:
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static-pie -o tugas_alpro src/*.cpp
           file tugas_alpro
           file tugas_alpro | grep -q -e 'static-pie linked' -e 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
-          # Tipe ELF harus DYN (PIE), dikarenakan Android menolak ET_EXEC; readelf ada di binutils bawaan runner.
-          readelf -h tugas_alpro | grep -q 'Type:.*DYN' || { echo "biner Linux bukan PIE (ET_EXEC), Android akan menolaknya"; exit 1; }
-          readelf -l tugas_alpro | grep -q 'INTERP' && { echo "biner Linux masih butuh interpreter dinamis"; exit 1; }
+          # Tipe ELF harus DYN (PIE) tanpa interpreter, persis seperti yang dijanjikan nama paketnya; readelf ada di binutils runner.
+          readelf -h tugas_alpro | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner Linux bukan PIE"; exit 1; }
+          [ "$(readelf -lW tugas_alpro | grep -c INTERP)" -eq 0 ] || { echo "biner Linux masih butuh interpreter dinamis"; exit 1; }
           out=$(printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro)
           echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
+          mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
+          tar -czf "alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.tar.gz" -C paket .
+
+      # Kompilasi silang untuk Android dengan clang NDK berfungsi menghasilkan PIE dinamis bionic (interpreter
+      # /system/bin/linker64) yang hanya bergantung pada pustaka sistem Android, dikarenakan libc++ ditautkan statis
+      # (-static-libstdc++). Runner tidak bisa menjalankan biner Android, jadi di sini hanya ELF-nya yang diperiksa; uji
+      # jalan dilakukan di perangkat (Termux) dan dicatat di CHANGELOG.
+      - name: Kompilasi Android aarch64 (NDK, bionic; pemeriksaan ELF saja)
+        if: matrix.label == 'android-aarch64'
+        shell: bash
+        run: |
+          ndk="$ANDROID_NDK_LATEST_HOME"; [ -d "$ndk" ] || { echo "NDK tidak ada di runner"; exit 1; }
+          cxx="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
+          "$cxx" --version | head -1
+          "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic -Werror -DBUILD_WITH_MENU -static-libstdc++ -o tugas_alpro src/*.cpp
+          file tugas_alpro
+          readelf -h tugas_alpro | grep -q 'Type:.*DYN (Position-Independent Executable' || { echo "biner Android bukan PIE"; exit 1; }
+          readelf -lW tugas_alpro | grep -q 'interpreter: /system/bin/linker64' || { echo "interpreter bukan linker64 Android"; exit 1; }
+          needed=$(readelf -dW tugas_alpro | awk '/NEEDED/ {print $5}' | tr -d '[]' | sort | tr '\n' ' ')
+          echo "NEEDED: $needed"
+          [ "$(echo "$needed" | grep -c 'libc++_shared')" -eq 0 ] || { echo "masih butuh libc++_shared.so"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           tar -czf "alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.tar.gz" -C paket .
 
@@ -114,7 +141,7 @@ jobs:
             alpro-console-tools-*.tar.gz
           if-no-files-found: error
 
-  # Dry-run (workflow_dispatch): job tanpa izin tulis ini mengumpulkan keempat paket dan mencetak daftar SHA-256,
+  # Dry-run (workflow_dispatch): job tanpa izin tulis ini mengumpulkan kelima paket dan mencetak daftar SHA-256,
   # dikarenakan download-artifact dan penamaan paket hanya terbukti dengan dijalankan, sedangkan rilis tidak boleh dibuat.
   kumpulkan:
     name: Dry-run (kumpulkan paket, tanpa rilis)
@@ -131,9 +158,9 @@ jobs:
       - name: Buat daftar SHA-256 semua paket (tidak diunggah)
         run: |
           cd paket && sha256sum * > SHA256SUMS && cat SHA256SUMS
-          [ "$(ls | wc -l)" -eq 5 ] || { echo "jumlah berkas bukan 5 (4 paket + SHA256SUMS)"; exit 1; }
+          [ "$(ls | wc -l)" -eq 6 ] || { echo "jumlah berkas bukan 6 (5 paket + SHA256SUMS)"; exit 1; }
 
-  # Tahap 2: satu job mengumpulkan keempat paket dan membuat halaman Release sekali, dengan catatan rilis otomatis.
+  # Tahap 2: satu job mengumpulkan kelima paket dan membuat halaman Release sekali, dengan catatan rilis otomatis.
   # Hanya berjalan untuk push tag, dikarenakan dry-run tidak boleh membuat rilis.
   publish:
     name: Terbitkan Release
