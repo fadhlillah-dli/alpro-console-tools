@@ -2,6 +2,12 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Diperbaiki
+- Paket Linux (x86_64 dan aarch64) kini ditautkan `-static-pie`, dikarenakan Android/Termux menolak executable statis
+  yang bukan PIE ("has unexpected e_type: 2" pada v1.0.6 di aarch64); workflow memeriksa tipe ELF DYN tanpa interpreter.
+
 ## [1.0.6] - 2026-10-13
 
 ### Ditambahkan

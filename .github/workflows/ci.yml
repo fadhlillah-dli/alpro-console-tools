@@ -89,14 +89,18 @@ jobs:
           [ "$sisa" -eq 0 ] || { echo "folder sementara tidak dihapus ($sisa sisa di $root)"; exit 1; }
           echo "coba.sh OK, tanpa sisa"
 
-      # Membangun biner statis persis seperti paket rilis Linux lalu menjalankannya, dikarenakan paket rilis harus jalan di
-      # distro dengan glibc lama dan ketergantungan glibc hanya hilang bila tautan statis penuh.
+      # Membangun biner static-pie persis seperti paket rilis Linux lalu menjalankannya, dikarenakan paket rilis harus jalan
+      # di distro dengan glibc lama (ketergantungan glibc hanya hilang bila tautan statis penuh) dan di Android/Termux
+      # (linker Android menolak executable yang bukan PIE: "has unexpected e_type: 2").
       - name: Uji biner statis (seperti paket rilis Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro_static src/*.cpp
-          file tugas_alpro_static | grep -q 'statically linked' || { echo "biner tidak statis"; exit 1; }
+          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static-pie -o tugas_alpro_static src/*.cpp
+          file tugas_alpro_static
+          file tugas_alpro_static | grep -q -e 'static-pie linked' -e 'statically linked' || { echo "biner tidak statis"; exit 1; }
+          readelf -h tugas_alpro_static | grep -q 'Type:.*DYN' || { echo "biner bukan PIE (ET_EXEC)"; exit 1; }
+          readelf -l tugas_alpro_static | grep -q 'INTERP' && { echo "biner masih butuh interpreter dinamis"; exit 1; }
           printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro_static | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "luas arsir salah"; exit 1; }
           echo "Biner statis OK"
 

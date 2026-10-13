@@ -75,17 +75,23 @@ jobs:
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           cd paket && zip -r "../alpro-console-tools-${PAKET_VERSI}-${{ matrix.label }}.zip" .
 
-      # Menggunakan -static (tautan statis penuh, termasuk glibc) berfungsi agar paket jalan di distro dengan glibc lebih lama
-      # dari runner (Ubuntu 22.04, Debian 12, WSL bawaan), dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38.
-      - name: Kompilasi Linux (statis penuh agar jalan di banyak distro; x86_64 dan aarch64)
+      # Menggunakan -static-pie (tautan statis penuh termasuk glibc, sekaligus position-independent) berfungsi agar paket
+      # jalan di distro dengan glibc lebih lama dari runner (Ubuntu 22.04, Debian 12, WSL bawaan) DAN di Android/Termux,
+      # dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38, sedangkan linker Android menolak executable yang
+      # bukan PIE dengan pesan "has unexpected e_type: 2" (kejadian v1.0.6 di Termux aarch64).
+      - name: Kompilasi Linux (static-pie agar jalan di banyak distro dan Android; x86_64 dan aarch64)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           # Mencocokkan uname -m dengan matrix.arch berfungsi agar label paket tidak pernah salah pasang, dikarenakan
           # coba.sh memilih paket dari nama arsitekturnya.
           [ "$(uname -m)" = "${{ matrix.arch }}" ] || { echo "runner $(uname -m) tidak cocok dengan label ${{ matrix.label }}"; exit 1; }
-          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro src/*.cpp
-          file tugas_alpro | grep -q 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
+          g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static-pie -o tugas_alpro src/*.cpp
+          file tugas_alpro
+          file tugas_alpro | grep -q -e 'static-pie linked' -e 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
+          # Tipe ELF harus DYN (PIE), dikarenakan Android menolak ET_EXEC; readelf ada di binutils bawaan runner.
+          readelf -h tugas_alpro | grep -q 'Type:.*DYN' || { echo "biner Linux bukan PIE (ET_EXEC), Android akan menolaknya"; exit 1; }
+          readelf -l tugas_alpro | grep -q 'INTERP' && { echo "biner Linux masih butuh interpreter dinamis"; exit 1; }
           out=$(printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro)
           echo "$out" | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
