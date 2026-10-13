@@ -2,7 +2,7 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
-## [Unreleased]
+## [1.0.7] - 2026-10-13
 
 ### Ditambahkan
 - Paket Android aarch64 (Termux) dibangun dengan clang NDK (r30, clang 21) untuk bionic: PIE dinamis dengan interpreter
