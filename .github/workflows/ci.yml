@@ -72,8 +72,9 @@ jobs:
       # jadi prompt di awal baris dipisah ke barisnya sendiri; pemisahan ini tidak bisa menyembunyikan baris yang melebar,
       # karena prompt yang tidak dikenali hanya membuat baris lebih panjang. Setiap kasus wajib memuat teks hasilnya dan
       # jumlah pesan [!] yang persis, supaya kasus yang ketikannya tergeser tidak lolos diam-diam. Cakupannya hanya kasus
-      # di daftar ini; stdout dan stderr diukur terpisah. Tanda aksen gabungan juga tidak boleh terpisah dari hurufnya, dan
-      # lanjutan nama di tabel harus lurus di kolom nama. Kontrol negatif: gate ini gagal pada v1.0.7.
+      # di daftar ini; stdout dan stderr diukur terpisah. Tanda aksen gabungan juga tidak boleh terpisah dari hurufnya,
+      # lanjutan nama di tabel harus lurus di kolom nama, dan tabel tidak boleh mendapat baris kosong sebelum garisnya.
+      # Kontrol negatif: gate ini gagal pada v1.0.7.
       - name: Uji tata letak terminal sempit (40-200 kolom)
         if: runner.os != 'Windows'
         shell: bash
@@ -114,8 +115,10 @@ jobs:
               ('tugas1_nilai_mahasiswa', K('Pemrograman', '1', '王' * 30, '100'), ['Nilai Rata-Rata'], 0),
               # Nama yang katanya berakhir tepat di batas kolom: lanjutan nama harus lurus di kolom nama (6 spasi setelah garis tepi),
               # bukan bergeser karena spasi pemisahnya terbawa ke baris berikutnya.
-              ('tugas1_nilai_mahasiswa', K('Kalkulus', '2', 'A' * 25 + ' ' + 'B' * 10, '50', 'E' * 25 + '  F', '60'), ['Nilai Rata-Rata'], 0,
+              ('tugas1_nilai_mahasiswa', K('Kalkulus', '2', 'A' * 25 + ' ' + 'B' * 10, '50', 'E' * 25 + ' F', '60'), ['Nilai Rata-Rata'], 0,
                [re.compile('^\u2502 {7,}[BF]')]),
+              # Satu huruf bertumpuk 29 tanda aksen (lebarnya menurut program 30 kolom): tabel tidak boleh mendapat baris kosong.
+              ('tugas1_nilai_mahasiswa', K('Kalkulus', '1', 'Budi e' + '\u0301' * 29, '70'), ['Nilai Rata-Rata'], 0),
               # Nama dengan tanda aksen gabungan (e + U+0301): saat dilipat, aksen tidak boleh terpisah dari hurufnya.
               ('tugas1_nilai_mahasiswa', K('Kalkulus', '1', 'A' + 'e\u0301' * 29, '75'), ['Nilai Rata-Rata'], 0),
               ('tugas2_volume_tabung', K('', '2', '2', '14', '10'), ['Volume Tabung         : 1540.00'], 0),
@@ -137,6 +140,8 @@ jobs:
                       for must in musts:
                           if must not in out + err:
                               bad.append(f'{tag}: keluaran tidak memuat "{must}" (kasus tidak teruji sampai akhir)')
+                      if re.search('^\u2502 +\u2502\n\u2502 -{3,}', out, re.M):
+                          bad.append(f'{tag}: baris kosong tepat sebelum garis tabel (potongan yang isinya hanya indentasi)')
                       if out.count('[!]') != bangs:
                           bad.append(f'{tag}: {out.count("[!]")} pesan [!], harusnya {bangs}')
                       for line in list(lines_of(out)) + err.split('\n'):

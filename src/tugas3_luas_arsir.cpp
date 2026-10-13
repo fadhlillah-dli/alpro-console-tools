@@ -238,7 +238,7 @@ namespace { // namespace { adalah awal wadah tanpa nama; wadah ini ditutup pada 
     // Baris lanjutan diberi indentasi gantung sebanyak hangingIndent spasi, agar sejajar dengan isi setelah label. maxWidth dan hangingIndent diterima sebagai salinan, jadi boleh diubah di dalam fungsi.
     // Dipakai drawBox() dan printError() di bawah, readLine() di BAGIAN 4, printOptions() dan printTitle() di BAGIAN 5, run() di BAGIAN 6, dan main() di BAGIAN 7.
     // Lebar dihitung per karakter dengan displayWidth() (aksara lebar seperti CJK memakai 2 kolom). Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong di batas lebar.
-    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya; tanda aksen gabungan tetap menempel pada hurufnya, dan spasi biasa di kedua sisi titik potong dibuang.
+    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya; tanda aksen gabungan Latin (U+0300 sampai U+036F) tetap menempel pada hurufnya, spasi biasa yang menempel pada titik potong dibuang, dan tidak ada baris yang isinya hanya indentasi.
         std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
         std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
@@ -311,6 +311,8 @@ namespace { // namespace { adalah awal wadah tanpa nama; wadah ini ditutup pada 
             if (activeColor == ANSI_RESET) activeColor.clear(); // activeColor == ANSI_RESET artinya kode terakhir justru mematikan warna; activeColor.clear() berfungsi untuk mengosongkannya.
             if (!activeColor.empty()) piece += ANSI_RESET; // !activeColor.empty() artinya masih ada warna yang menyala, jadi piece += ANSI_RESET mematikannya di ujung baris.
             result.push_back(piece); // result.push_back(piece) artinya potongan ini menjadi satu baris hasil.
+            if (displayWidth(remaining.substr(restStart)) == 0) return result; // displayWidth(remaining.substr(restStart)) == 0 artinya sisa teks tidak memuat huruf lagi
+            // (hanya spasi atau kode warna), jadi return result berfungsi untuk langsung mengembalikan hasil tanpa membuat baris yang isinya hanya indentasi.
             remaining = std::string(hangingIndent, ' ') + activeColor + remaining.substr(restStart); // std::string(hangingIndent, ' ') + activeColor + remaining.substr(restStart) adalah
             // baris berikutnya: spasi indentasi gantung, kode warna yang dinyalakan lagi (bila ada), lalu sisa teks.
         } // akhir perulangan while
