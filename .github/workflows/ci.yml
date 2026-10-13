@@ -18,7 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # ubuntu-24.04-arm (runner ARM64 GitHub-hosted) berfungsi untuk membuktikan build dan paket statis aarch64,
+        # dikarenakan paket rilis Linux kini ada dua arsitektur.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -64,8 +66,10 @@ jobs:
 
       # Menguji coba.sh persis seperti pengguna (tanpa tty, jadi masukan lewat stdin) dan memastikan folder sementaranya
       # benar-benar dihapus, dikarenakan janji skrip itu adalah tidak menyisakan berkas apa pun.
+      # Di runner ARM langkah ini dilewati sampai rilis pertama yang memuat paket linux-aarch64 (v1.0.6) terbit,
+      # dikarenakan coba.sh selalu mengambil rilis terbaru; setelah itu syarat matrix.os di bawah dihapus.
       - name: Uji coba.sh (sekali jalan tanpa memasang)
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && matrix.os != 'ubuntu-24.04-arm'
         shell: bash
         run: |
           out=$(printf '3\n\n2\n14\n\n0\n' | sh coba.sh) || { echo "$out"; echo "coba.sh keluar dengan status non-nol"; exit 1; }

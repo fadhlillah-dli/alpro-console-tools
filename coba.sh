@@ -20,9 +20,16 @@ main() {
   case "$os" in
     Darwin) label="macos-universal"; ext="zip" ;;
     Linux)
+      # Nama arsitektur dari uname -m dipetakan ke label paket, dikarenakan rilis Linux ada dua: x86_64 (PC/laptop/server
+      # Intel dan AMD) dan aarch64 (ARM64: Raspberry Pi 4/5 64-bit, server ARM, VM Apple Silicon); arm64 adalah nama lain
+      # yang dipakai sebagian distro untuk aarch64.
       arch="$(uname -m)"
-      [ "$arch" = "x86_64" ] || die "paket Linux hanya tersedia untuk x86_64 (arsitektur ini: $arch). Kompilasi sendiri: lihat README."
-      label="linux-x86_64"; ext="tar.gz" ;;
+      case "$arch" in
+        x86_64)        label="linux-x86_64" ;;
+        aarch64|arm64) label="linux-aarch64" ;;
+        *) die "paket Linux hanya tersedia untuk x86_64 dan aarch64 (arsitektur ini: $arch). Kompilasi sendiri: lihat README." ;;
+      esac
+      ext="tar.gz" ;;
     *) die "sistem $os tidak didukung oleh skrip ini" ;;
   esac
 
@@ -41,7 +48,9 @@ main() {
   trap 'if [ -n "$tmp" ]; then rm -rf "$tmp"; fi' EXIT INT TERM HUP
   tmp="$(mktemp -d)"
   say "Mengunduh $asset ..."
-  curl -fsSL -o "$tmp/$asset" "$base/$asset"
+  # Pesan khusus bila paket tidak ada berfungsi untuk menjelaskan penyebabnya, dikarenakan rilis sebelum v1.0.6 belum
+  # menyertakan paket linux-aarch64 dan curl -f hanya melaporkan kode HTTP.
+  curl -fsSL -o "$tmp/$asset" "$base/$asset" || die "paket $asset tidak ditemukan di rilis $version (paket linux-aarch64 ada sejak v1.0.6)"
 
   # SHA256SUMS wajib ada, dikarenakan skrip ini selalu mengambil rilis terbaru dan setiap rilis sejak v1.0.2 menyertakannya.
   curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"

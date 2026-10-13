@@ -25,6 +25,12 @@ jobs:
             label: macos-universal
           - os: ubuntu-latest
             label: linux-x86_64
+            arch: x86_64
+          # Runner ARM64 GitHub-hosted (gratis untuk repositori publik) berfungsi untuk membangun paket Linux aarch64 secara
+          # native, dikarenakan kompilasi silang tidak bisa menjalankan uji asapnya sendiri.
+          - os: ubuntu-24.04-arm
+            label: linux-aarch64
+            arch: aarch64
           - os: windows-latest
             label: windows-x86_64
     steps:
@@ -58,12 +64,16 @@ jobs:
 
       # Menggunakan -static (tautan statis penuh, termasuk glibc) berfungsi agar paket jalan di distro dengan glibc lebih lama
       # dari runner (Ubuntu 22.04, Debian 12, WSL bawaan), dikarenakan -static-libstdc++ saja masih meminta GLIBC_2.38.
-      - name: Kompilasi Linux (statis penuh agar jalan di banyak distro)
+      - name: Kompilasi Linux (statis penuh agar jalan di banyak distro; x86_64 dan aarch64)
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          # Mencocokkan uname -m dengan matrix.arch berfungsi agar label paket tidak pernah salah pasang, dikarenakan
+          # coba.sh memilih paket dari nama arsitekturnya.
+          [ "$(uname -m)" = "${{ matrix.arch }}" ] || { echo "runner $(uname -m) tidak cocok dengan label ${{ matrix.label }}"; exit 1; }
           g++ -std=c++17 -O2 -DBUILD_WITH_MENU -static -o tugas_alpro src/*.cpp
           file tugas_alpro | grep -q 'statically linked' || { echo "biner Linux tidak statis"; exit 1; }
+          printf '3\n\n2\n14\n\n0\n' | ./tugas_alpro | grep -q "Luas Bangun yang Diarsir : 42.00" || { echo "uji asap paket gagal"; exit 1; }
           mkdir -p paket && cp tugas_alpro README.md LICENSE paket/
           tar -czf "alpro-console-tools-${GITHUB_REF_NAME}-${{ matrix.label }}.tar.gz" -C paket .
 
@@ -84,7 +94,7 @@ jobs:
             alpro-console-tools-*.tar.gz
           if-no-files-found: error
 
-  # Tahap 2: satu job mengumpulkan ketiga paket dan membuat halaman Release sekali, dengan catatan rilis otomatis.
+  # Tahap 2: satu job mengumpulkan keempat paket dan membuat halaman Release sekali, dengan catatan rilis otomatis.
   publish:
     name: Terbitkan Release
     needs: build
