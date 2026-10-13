@@ -210,7 +210,7 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
     // berfungsi untuk memotong text di spasi menjadi beberapa baris yang masing-masing muat dalam maxWidth kolom, supaya terminal tidak memotongnya sembarangan.
     // Baris lanjutan diberi indentasi gantung sebanyak hangingIndent spasi, agar sejajar dengan isi setelah label. Dipakai drawBox() dan printError() di bawah.
     // Lebar dihitung per karakter dengan displayWidth() (aksara lebar seperti CJK memakai 2 kolom). Bila tidak ada spasi yang pas, dipakai cadangan: spasi setelah teks dimulai (lanjutannya menjorok 2 spasi), atau kata yang terlalu panjang dipotong di batas lebar.
-    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya; tanda aksen gabungan tetap menempel pada hurufnya, dan spasi di ujung potongan dibuang.
+    // Kode warna yang masih menyala di ujung sebuah baris dimatikan di sana dan dinyalakan lagi di awal baris berikutnya; tanda aksen gabungan tetap menempel pada hurufnya, dan spasi biasa di kedua sisi titik potong dibuang.
         std::vector<std::string> result;  // result adalah daftar baris hasil, mula-mula kosong.
         if (hangingIndent + 10 > maxWidth) hangingIndent = 2; // hangingIndent + 10 > maxWidth artinya jendela terlalu sempit untuk indentasi gantung + 10 kolom isi, jadi indentasi dikecilkan menjadi 2 spasi.
         std::string remaining = text;  // remaining adalah sisa teks yang belum dipotong; disalin dari text karena isinya akan diganti di setiap putaran.
@@ -242,14 +242,14 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                     charEnd += 2; // charEnd += 2 artinya lewati tanda aksen itu (dua byte), karena ia milik huruf yang sama.
                 } // akhir perulangan tanda aksen gabungan
                 const std::size_t charWidth = displayWidth(remaining.substr(i, charEnd - i)); // charWidth adalah lebar karakter ini di layar menurut displayWidth():
-                // 2 kolom untuk aksara lebar (CJK, Hangul, emoji), 1 kolom untuk yang lain.
+                // 2 kolom untuk aksara lebar (CJK, Hangul, emoji), 1 kolom untuk huruf lain, ditambah 1 kolom untuk setiap tanda aksen gabungan yang menempel, karena displayWidth() menghitung aksen itu tersendiri.
                 // break berfungsi untuk keluar dari perulangan saat itu juga.
                 if (col + charWidth > maxWidth) { hardCutPos = i; break; } // col + charWidth > maxWidth artinya karakter ini tidak muat lagi di baris: hardCutPos = i mencatat posisinya untuk potongan paksa, lalu break berhenti mencari.
                 if (c == ' ' && col > hangingIndent) cutPos = i; // c == ' ' && col > hangingIndent artinya spasi ini menjadi calon titik potong, asalkan letaknya setelah indentasi gantung;
                 // yang akhirnya tersimpan adalah spasi terakhir sebelum batas lebar.
                 if (c == ' ' && seenText) looseCutPos = i; // c == ' ' && seenText artinya spasi ini ada setelah teks dimulai, jadi dicatat sebagai titik potong cadangan looseCutPos.
                 if (c != ' ') seenText = true; // c != ' ' artinya karakter ini bukan spasi, jadi seenText = true: teks di baris ini sudah dimulai.
-                col += charWidth; // col += charWidth artinya kolom bertambah selebar karakter ini (1 atau 2).
+                col += charWidth; // col += charWidth artinya kolom bertambah selebar karakter ini, sama dengan hitungan displayWidth() untuk seluruh teks.
                 i = charEnd - 1; // i = charEnd - 1 artinya lompat ke byte terakhir karakter ini (termasuk tanda aksennya), supaya ++i di perulangan for langsung menuju karakter berikutnya.
             } // akhir perulangan mencari titik potong
             // Bila tidak ada spasi setelah indentasi gantung (misalnya angka hasil yang sangat panjang setelah label), dipakai spasi cadangan.
@@ -261,11 +261,13 @@ namespace { // namespace { tanpa nama berfungsi untuk membuat isinya hanya terli
                 restStart = remaining.find_first_not_of(' ', cutPos); // remaining.find_first_not_of(' ', cutPos) adalah posisi huruf pertama setelah spasi itu,
                 // jadi spasi di titik potong (juga spasi ganda) dibuang dan baris berikutnya tidak menjorok terlalu jauh.
                 if (restStart == std::string::npos) restStart = remaining.size(); // restStart == std::string::npos artinya setelah spasi itu tidak ada huruf lagi, jadi sisanya kosong.
-            } else if (hardCutPos != std::string::npos && col > hangingIndent) { // hardCutPos != std::string::npos && col > hangingIndent artinya tidak ada spasi sama sekali,
-            // jadi satu kata lebih panjang dari satu baris dan kata itu dipotong di batas lebar. Syarat col > hangingIndent artinya potongan memuat huruf selain spasi indentasi,
-            // sehingga sisa teks selalu memendek dan perulangan pasti selesai.
+            } else if (hardCutPos != std::string::npos && col > hangingIndent) { // hardCutPos != std::string::npos && col > hangingIndent artinya tidak ada spasi yang bisa dipakai
+            // sebelum batas lebar (satu kata yang lebih panjang dari satu baris, atau kata yang berakhir tepat di batas lebar sehingga spasi sesudahnya tidak sempat diperiksa), jadi teks dipotong tepat di batas lebar. Syarat col > hangingIndent artinya potongan
+            // memuat huruf selain spasi indentasi, sehingga sisa teks selalu memendek dan perulangan pasti selesai.
                 pieceEnd = hardCutPos; // pieceEnd = hardCutPos artinya potongan berakhir tepat sebelum karakter yang tidak muat.
-                restStart = hardCutPos; // restStart = hardCutPos artinya sisa teks dimulai dari karakter itu; tidak ada huruf yang dibuang.
+                restStart = remaining.find_first_not_of(' ', hardCutPos); // remaining.find_first_not_of(' ', hardCutPos) adalah awal sisa teks: karakter yang tidak muat itu,
+                // atau huruf sesudahnya bila karakter itu spasi (spasi itu tidak pindah ke awal baris berikutnya); tidak ada huruf yang dibuang.
+                if (restStart == std::string::npos) restStart = remaining.size(); // restStart == std::string::npos artinya sesudahnya hanya ada spasi, jadi sisanya kosong.
             } else { // else artinya tidak ada titik potong yang aman sama sekali.
                 break; // break artinya keluar dari while dan membiarkan sisa teks apa adanya.
             } // akhir pemilihan titik potong

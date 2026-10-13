@@ -72,8 +72,8 @@ jobs:
       # jadi prompt di awal baris dipisah ke barisnya sendiri; pemisahan ini tidak bisa menyembunyikan baris yang melebar,
       # karena prompt yang tidak dikenali hanya membuat baris lebih panjang. Setiap kasus wajib memuat teks hasilnya dan
       # jumlah pesan [!] yang persis, supaya kasus yang ketikannya tergeser tidak lolos diam-diam. Cakupannya hanya kasus
-      # di daftar ini; stdout dan stderr diukur terpisah. Tanda aksen gabungan juga tidak boleh terpisah dari hurufnya saat
-      # nama dilipat. Kontrol negatif: gate ini gagal pada v1.0.7.
+      # di daftar ini; stdout dan stderr diukur terpisah. Tanda aksen gabungan juga tidak boleh terpisah dari hurufnya, dan
+      # lanjutan nama di tabel harus lurus di kolom nama. Kontrol negatif: gate ini gagal pada v1.0.7.
       - name: Uji tata letak terminal sempit (40-200 kolom)
         if: runner.os != 'Windows'
         shell: bash
@@ -94,7 +94,7 @@ jobs:
                       m = PROMPT.match(line)
                   yield line
           K = lambda *xs: '\n'.join(xs) + '\n'
-          # (program, ketikan, teks yang wajib muncul, jumlah pesan [!] yang wajib persis)
+          # (program, ketikan, teks yang wajib muncul, jumlah pesan [!] yang wajib persis[, pola baris yang tidak boleh muncul])
           CASES = [
               ('tugas_alpro', K('2', '', '2', '2', '14', '10', '', '3', '', '2', '14', '', '0'), ['Volume Tabung         : 1540.00', 'Luas Bangun yang Diarsir : 42.00'], 0),
               ('tugas_alpro', K('1', 'Algoritma dan Pemrograman Lanjutan Semester Ganjil', '2',
@@ -102,7 +102,8 @@ jobs:
               ('tugas_alpro', K('1', '王' * 30, '2', '王小明 李四 张三丰 王五 赵六 孙七 周八 吴九', '90', '한' * 30, '80', '', '0'), ['Nilai Rata-Rata'], 0),
               ('tugas_alpro', K('1', 'Ａ' * 30, '2', 'Ａ' * 30, '70', '😀' * 30, '60', '', '0'), ['Nilai Rata-Rata'], 0),
               ('tugas_alpro', K('1', 'K' * 60, '1', 'N' * 60, '55', '', '0'), ['Nilai Rata-Rata'], 0),
-              ('tugas_alpro', K('2', '4', '1', '1', '1000000', '1000000', '', '3', '4', '1', '1000000', '', '0'), ['Volume Tabung', 'Luas Bangun yang Diarsir'], 0),
+              ('tugas_alpro', K('2', '4', '1', '1', '1000000', '1000000', '', '3', '4', '1', '1000000', '', '0'),
+               ['Volume Tabung         : ', 'Luas Bangun yang Diarsir : '], 0),
               # Skrip validasi PRD 4.2: setiap jenis input salah di menu 1 dan 3 (27 penolakan), lalu hasilnya tetap keluar.
               ('tugas_alpro', K('9', 'abc', '2.5', '', '1', '123', '', '.,-', 'X', '0', '1001', '3.0', '-1', 'tiga', '1', '123', '', 'Ayu', '1e2', '+5',
                                 '.5', '5.', '101', '-1', '80', '', '3', '0', '9', 'abc', '', '2', '0', '-7', '1e3', '', '14', '', '0'),
@@ -111,6 +112,10 @@ jobs:
               ('tugas_alpro', K('9', 'abc', '2', 'x', '9', '', 'abc', '3', '', '0', '5', '', '-5', 'abc', '1000001', '14', '0', '10', '', '0'),
                ['Volume Tabung         : 6154.40'], 12),
               ('tugas1_nilai_mahasiswa', K('Pemrograman', '1', '王' * 30, '100'), ['Nilai Rata-Rata'], 0),
+              # Nama yang katanya berakhir tepat di batas kolom: lanjutan nama harus lurus di kolom nama (6 spasi setelah garis tepi),
+              # bukan bergeser karena spasi pemisahnya terbawa ke baris berikutnya.
+              ('tugas1_nilai_mahasiswa', K('Kalkulus', '2', 'A' * 25 + ' ' + 'B' * 10, '50', 'E' * 25 + '  F', '60'), ['Nilai Rata-Rata'], 0,
+               [re.compile('^\u2502 {7,}[BF]')]),
               # Nama dengan tanda aksen gabungan (e + U+0301): saat dilipat, aksen tidak boleh terpisah dari hurufnya.
               ('tugas1_nilai_mahasiswa', K('Kalkulus', '1', 'A' + 'e\u0301' * 29, '75'), ['Nilai Rata-Rata'], 0),
               ('tugas2_volume_tabung', K('', '2', '2', '14', '10'), ['Volume Tabung         : 1540.00'], 0),
@@ -124,7 +129,7 @@ jobs:
                   env['FORCE_COLOR'] = '1'
               for cols in range(40, 201):
                   env['COLUMNS'] = str(cols)
-                  for exe, stdin, musts, bangs in CASES:
+                  for exe, stdin, musts, bangs, *forbidden in CASES:
                       runs += 1
                       r = subprocess.run(['./' + exe], input=stdin.encode(), capture_output=True, env=env, timeout=30)
                       out, err = ANSI.sub('', r.stdout.decode('utf-8')), ANSI.sub('', r.stderr.decode('utf-8'))
@@ -139,6 +144,9 @@ jobs:
                               bad.append(f'{tag}: lebar {width(line)} > {cols - 1}: {line}')
                           if any(unicodedata.combining(c) and (k == 0 or line[k - 1] in ' \u2502') for k, c in enumerate(line)):
                               bad.append(f'{tag}: tanda aksen terpisah dari hurufnya: {line}')
+                          for pattern in (forbidden[0] if forbidden else []):
+                              if pattern.search(line):
+                                  bad.append(f'{tag}: baris tidak boleh berpola {pattern.pattern!r}: {line}')
           for b in bad[:30]:
               print(b)
           print(f'{len(bad)} pelanggaran dari {runs} run')

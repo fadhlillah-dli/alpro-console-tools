@@ -9,8 +9,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   dengan warna, memakai nama ASCII dan beraksara lebar sepanjang batasnya, ukuran terbesar, input yang habis di tengah
   jalan, dan setiap jenis input salah (skrip validasi PRD, 27 penolakan, dan urutan menu 2, 12 penolakan). Setiap baris
   buatan program harus paling lebar terminal dikurangi 1 kolom, dan setiap kasus harus sampai ke hasilnya dengan jumlah
-  pesan `[!]` yang persis; tanda aksen gabungan juga tidak boleh terpisah dari hurufnya. Gate ini gagal pada v1.0.7, pada
-  perbaikan pertama yang belum menghitung aksara lebar, dan pada salinan uji yang pesan galatnya tidak dilipat.
+  pesan `[!]` yang persis; tanda aksen gabungan tidak boleh terpisah dari hurufnya, dan lanjutan nama di tabel harus lurus
+  di kolom nama. Gate ini gagal pada v1.0.7, pada versi antara cabang pengembangan yang belum menghitung aksara lebar atau
+  masih memindahkan spasi ke awal baris, dan pada salinan uji yang pesan galatnya tidak dilipat.
 
 ### Diperbaiki
 - Tampilan di terminal sempit, misalnya Termux pada ponsel tegak (sekitar 46 kolom): lebar minimal kini 40 kolom
@@ -23,8 +24,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   program (CJK, Hangul, huruf lebar penuh, emoji wajah dan simbol di U+1F300-1F64F dan U+1F900-1F9FF) dihitung dua kolom.
   Angka hasil yang sangat panjang setelah label pindah ke baris berikutnya, kata yang lebih panjang dari satu baris
   dipotong di batas lebar tanpa memisahkan tanda aksen gabungan dari hurufnya, warna baris hasil ikut ke baris lanjutannya
-  tanpa bocor ke garis tepi kotak, spasi di titik potong dibuang dari kedua sisi, dan lanjutan baris yang sudah menjorok
-  (contoh di kotak petunjuk, keterangan menu) lurus di bawah barisnya, juga di terminal sampai 100 kolom.
+  tanpa bocor ke garis tepi kotak, spasi di titik potong dibuang dari kedua sisi (juga bila kata berakhir tepat di batas
+  lebar), dan lanjutan baris yang sudah menjorok (contoh di kotak petunjuk, keterangan menu) lurus di bawah barisnya, juga
+  di terminal sampai 100 kolom.
 - Selain gate CI, diuji di pseudo-terminal 40-200 kolom untuk program bermenu dan program mandiri: tidak ada baris buatan
   program yang melebihi lebar terminal untuk masukan yang diuji, uji asap tetap persis, validasi dan hasil hitung tidak
   berubah, dan di terminal 101 kolom ke atas tampilan sama dengan v1.0.7.
