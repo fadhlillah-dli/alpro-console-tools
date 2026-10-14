@@ -7,6 +7,8 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 ### Diubah
 - README: kalimat platform di bagian Menjalankan diringkas; catatan versi paket (aarch64 sejak v1.0.6, Android sejak v1.0.7,
   tata letak 40 kolom sejak v1.0.8) cukup tercatat di CHANGELOG.
+- README: kalimat bahwa Windows Terminal menampilkan sketsa Braille dengan benar dihapus dari bagian Menjalankan
+  (suntingan pemilik lewat editor web, commit c1c0030); catatan font di bagian Catatan tampilan tetap.
 
 ## [1.0.8] - 2026-10-14
 
