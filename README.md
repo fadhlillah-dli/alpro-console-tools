@@ -62,7 +62,7 @@ Satu perintah, tanpa memasang apa pun: paket rilis terbaru diunduh ke folder sem
 lalu foldernya dihapus begitu program ditutup (juga bila dihentikan dengan Ctrl+C). Tidak perlu hak Administrator, tidak
 ada dialog Gatekeeper atau SmartScreen, dan PATH tidak disentuh.
 
-macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM; paket aarch64 ada sejak v1.0.6), dan Android lewat Termux (aarch64; `pkg install curl` bila belum ada; paket android ada sejak v1.0.7; sejak v1.0.8 tata letak menyesuaikan lebar terminal mulai 40 kolom, jadi layar ponsel tegak pun rapi), di Terminal:
+macOS, Linux (x86_64 atau aarch64/ARM64, misalnya Raspberry Pi 64-bit dan server ARM), dan Android lewat Termux (aarch64; `pkg install curl` bila belum ada), di Terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/coba.sh | sh
