@@ -75,7 +75,7 @@ irm https://raw.githubusercontent.com/fadhlillah-dli/alpro-console-tools/main/co
 ```
 
 Setiap kali dijalankan paket diunduh ulang (kurang dari 1 MB), jadi perlu koneksi internet. Di Windows, Command Prompt
-klasik dengan font Consolas menampilkan sketsa Braille sebagai kotak kecil; Windows Terminal menampilkannya dengan benar.
+klasik dengan font Consolas menampilkan sketsa Braille sebagai kotak kecil.
 
 ## Kompilasi sendiri
 
